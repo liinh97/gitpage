@@ -105,14 +105,6 @@
       .right{min-width:96px}
     }
 
-    /* Print-friendly: when printing the modal, make it fill the page and larger fonts */
-    @media print{
-      body{background:#fff}
-      .modal-backdrop{background:transparent !important}
-      .modal{box-shadow:none; border-radius:0; padding:10mm; width:100%; max-width:100%}
-      .compact { font-size:18px !important }
-    }
-
     /* small utility */
     .muted{color:var(--muted); font-size:13px}
   </style>
@@ -139,7 +131,6 @@
 
     <div style="margin-left:auto" class="actions">
       <button class="btn" id="collapseBtn">Tóm gọn</button>
-      <button class="btn primary" id="printBtn">In / Chụp</button>
     </div>
   </div>
 
@@ -161,7 +152,6 @@
 
       <div style="display:flex; gap:8px; margin-top:12px">
         <button class="btn" id="closeModal">Đóng</button>
-        <button class="btn primary" id="modalPrint">In / Chụp</button>
       </div>
     </div>
   </div>
@@ -270,8 +260,6 @@
 
       document.getElementById('collapseBtn').addEventListener('click', openCompactPopup);
       document.getElementById('closeModal').addEventListener('click', closeModal);
-      document.getElementById('printBtn').addEventListener('click', ()=> window.print());
-      document.getElementById('modalPrint').addEventListener('click', ()=> { window.print(); });
 
       calculateAll();
     }

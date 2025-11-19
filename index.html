@@ -36,6 +36,7 @@
       .controls{flex-direction:row}
       .control{flex:1}
       .page-bottom-padding{height:64px}
+      .mobile-total-bar{position:fixed; left:0; right:0; bottom:0; background:#fff; border-top:1px solid #ddd; padding:10px 12px; display:flex; justify-content:space-between; align-items:center}
     }
   </style>
 </head>
@@ -43,6 +44,7 @@
   <h1>Danh sách sản phẩm</h1>
 
   <div class="list" id="product-list">
+    <!-- existing base items -->
     <div class="item" data-id="donut">
       <div class="name">Bánh rán</div>
       <div class="price-line">
@@ -60,7 +62,7 @@
       </div>
     </div>
 
-    <div class="item" data-id="nem">
+    <div class="item" data-id="nemchua_ran">
       <div class="name">Nem chua rán</div>
       <div class="price-line">
         <div class="price-block">
@@ -76,6 +78,64 @@
         <label>Số lượng <input type="number" min="0" class="qty" /></label>
       </div>
     </div>
+
+    <!-- Added items list -->
+    <div class="item"><div class="name">Nem tcc (sống)</div><div class="price-line"><div class="price-block"><div class="label-inline">Giá bán</div><div class="value price" data-raw="3800">3.8k</div></div><div class="price-block"><div class="label-inline">Thành tiền</div><div class="value subtotal">0</div></div></div><div class="qty-row"><label>Số lượng <input type="number" class="qty" /></label></div></div>
+
+    <div class="item"><div class="name">Nem tcc xù (sống)</div><div class="price-line"><div class="price-block"><div class="label-inline">Giá bán</div><div class="value price" data-raw="4000">4k</div></div><div class="price-block"><div class="label-inline">Thành tiền</div><div class="value subtotal">0</div></div></div><div class="qty-row"><label>Số lượng <input type="number" class="qty" /></label></div></div>
+
+    <div class="item"><div class="name">Nem tcc giỏ giòn (sống)</div><div class="price-line"><div class="price-block"><div class="label-inline">Giá bán</div><div class="value price" data-raw="5000">5k</div></div><div class="price-block"><div class="label-inline">Thành tiền</div><div class="value subtotal">0</div></div></div><div class="qty-row"><label>Số lượng <input type="number" class="qty" /></label></div></div>
+
+    <div class="item"><div class="name">Nem tcc phomai (sống)</div><div class="price-line"><div class="price-block"><div class="label-inline">Giá bán</div><div class="value price" data-raw="11000">11k</div></div><div class="price-block"><div class="label-inline">Thành tiền</div><div class="value subtotal">0</div></div></div><div class="qty-row"><label>Số lượng <input type="number" class="qty" /></label></div></div>
+
+    <div class="item"><div class="name">Nem tcc xù</div><div class="price-line"><div class="price-block"><div class="label-inline">Giá bán</div><div class="value price" data-raw="6500">6.5k</div></div><div class="price-block"><div class="label-inline">Thành tiền</div><div class="value subtotal">0</div></div></div><div class="qty-row"><label>Số lượng <input type="number" class="qty" /></label></div></div>
+
+    <div class="item"><div class="name">Nem tcc giỏ giòn</div><div class="price-line"><div class="price-block"><div class="label-inline">Giá bán</div><div class="value price" data-raw="7000">7k</div></div><div class="price-block"><div class="label-inline">Thành tiền</div><div class="value subtotal">0</div></div></div><div class="qty-row"><label>Số lượng <input type="number" class="qty" /></label></div></div>
+
+    <div class="item"><div class="name">Nem tcc phomai</div><div class="price-line"><div class="price-block"><div class="label-inline">Giá bán</div><div class="value price" data-raw="13000">13k</div></div><div class="price-block"><div class="label-inline">Thành tiền</div><div class="value subtotal">0</div></div></div><div class="qty-row"><label>Số lượng <input type="number" class="qty" /></label></div></div>
+
+    <div class="item"><div class="name">Bánh rán mặn</div><div class="price-line"><div class="price-block"><div class="label-inline">Giá bán</div><div class="value price" data-raw="8000">8k</div></div><div class="price-block"><div class="label-inline">Thành tiền</div><div class="value subtotal">0</div></div></div><div class="qty-row"><label>Số lượng <input type="number" class="qty" /></label></div></div>
+
+    <div class="item"><div class="name">Bánh rán phomai</div><div class="price-line"><div class="price-block"><div class="label-inline">Giá bán</div><div class="value price" data-raw="8000">8k</div></div><div class="price-block"><div class="label-inline">Thành tiền</div><div class="value subtotal">0</div></div></div><div class="qty-row"><label>Số lượng <input type="number" class="qty" /></label></div></div>
+
+    <div class="item"><div class="name">Nem chua thường</div><div class="price-line"><div class="price-block"><div class="label-inline">Giá bán</div><div class="value price" data-raw="7000">7k</div></div><div class="price-block"><div class="label-inline">Thành tiền</div><div class="value subtotal">0</div></div></div><div class="qty-row"><label>Số lượng <input type="number" class="qty" /></label></div></div>
+
+    <div class="item"><div class="name">Nem chua phomai</div><div class="price-line"><div class="price-block"><div class="label-inline">Giá bán</div><div class="value price" data-raw="9000">9k</div></div><div class="price-block"><div class="label-inline">Thành tiền</div><div class="value subtotal">0</div></div></div><div class="qty-row"><label>Số lượng <input type="number" class="qty" /></label></div></div>
+
+    <div class="item"><div class="name">Nem chua vỏ giòn</div><div class="price-line"><div class="price-block"><div class="label-inline">Giá bán</div><div class="value price" data-raw="5000">5k</div></div><div class="price-block"><div class="label-inline">Thành tiền</div><div class="value subtotal">0</div></div></div><div class="qty-row"><label>Số lượng <input type="number" class="qty" /></label></div></div>
+
+    <div class="item"><div class="name">Bánh xèo nhật</div><div class="price-line"><div class="price-block"><div class="label-inline">Giá bán</div><div class="value price" data-raw="60000">60k</div></div><div class="price-block"><div class="label-inline">Thành tiền</div><div class="value subtotal">0</div></div></div><div class="qty-row"><label>Số lượng <input type="number" class="qty" /></label></div></div>
+
+    <div class="item"><div class="name">Gà chiên mắm</div><div class="price-line"><div class="price-block"><div class="label-inline">Giá bán</div><div class="value price" data-raw="35000">35k</div></div><div class="price-block"><div class="label-inline">Thành tiền</div><div class="value subtotal">0</div></div></div><div class="qty-row"><label>Số lượng <input type="number" class="qty" /></label></div></div>
+
+    <div class="item"><div class="name">Chân gà rút xương</div><div class="price-line"><div class="price-block"><div class="label-inline">Giá bán</div><div class="value price" data-raw="7000">7k</div></div><div class="price-block"><div class="label-inline">Thành tiền</div><div class="value subtotal">0</div></div></div><div class="qty-row"><label>Số lượng <input type="number" class="qty" /></label></div></div>
+
+    <div class="item"><div class="name">Thịt chưng mắm tép</div><div class="price-line"><div class="price-block"><div class="label-inline">Giá bán</div><div class="value price" data-raw="35000">35k</div></div><div class="price-block"><div class="label-inline">Thành tiền</div><div class="value subtotal">0</div></div></div><div class="qty-row"><label>Số lượng <input type="number" class="qty" /></label></div></div>
+
+    <div class="item"><div class="name">Salad</div><div class="price-line"><div class="price-block"><div class="label-inline">Giá bán</div><div class="value price" data-raw":"40000">40k</div></div><div class="price-block"><div class="label-inline">Thành tiền</div><div class="value subtotal">0</div></div></div><div class="qty-row"><label>Số lượng <input type="number" class="qty" /></label></div></div>
+
+    <div class="item"><div class="name">Bún thang chay</div><div class="price-line"><div class="price-block"><div class="label-inline">Giá bán</div><div class="value price" data-raw="45000">45k</div></div><div class="price-block"><div class="label-inline">Thành tiền</div><div class="value subtotal">0</div></div></div><div class="qty-row"><label>Số lượng <input type="number" class="qty" /></label></div></div>
+
+    <div class="item"><div class="name">Xôi nấm</div><div class="price-line"><div class="price-block"><div class="label-inline">Giá bán</div><div class="value price" data-raw="45000">45k</div></div><div class="price-block"><div class="label-inline">Thành tiền</div><div class="value subtotal">0</div></div></div><div class="qty-row"><label>Số lượng <input type="number" class="qty" /></label></div></div>
+
+    <div class="item"><div class="name">Cốt chay</div><div class="price-line"><div class="price-block"><div class="label-inline">Giá bán</div><div class="value price" data-raw="35000">35k</div></div><div class="price-block"><div class="label-inline">Thành tiền</div><div class="value subtotal">0</div></div></div><div class="qty-row"><label>Số lượng <input type="number" class="qty" /></label></div></div>
+
+    <div class="item"><div class="name">Mọc chay</div><div class="price-line"><div class="price-block"><div class="label-inline">Giá bán</div><div class="value price" data-raw="11000">11k</div></div><div class="price-block"><div class="label-inline">Thành tiền</div><div class="value subtotal">0</div></div></div><div class="qty-row"><label>Số lượng <input type="number" class="qty" /></label></div></div>
+
+    <div class="item"><div class="name">Giò nấm chay</div><div class="price-line"><div class="price-block"><div class="label-inline">Giá bán</div><div class="value price" data-raw="11000">11k</div></div><div class="price-block"><div class="label-inline">Thành tiền</div><div class="value subtotal">0</div></div></div><div class="qty-row"><label>Số lượng <input type="number" class="qty" /></label></div></div>
+
+    <div class="item"><div class="name">Chả cốm chay</div><div class="price-line"><div class="price-block"><div class="label-inline">Giá bán</div><div class="value price" data-raw="12000">12k</div></div><div class="price-block"><div class="label-inline">Thành tiền</div><div class="value subtotal">0</div></div></div><div class="qty-row"><label>Số lượng <input type="number" class="qty" /></label></div></div>
+
+    <div class="item"><div class="name">Ruốc nấm</div><div class="price-line"><div class="price-block"><div class="label-inline">Giá bán</div><div class="value price" data-raw="35000">35k</div></div><div class="price-block"><div class="label-inline">Thành tiền</div><div class="value subtotal">0</div></div></div><div class="qty-row"><label>Số lượng <input type="number" class="qty" /></label></div></div>
+
+    <div class="item"><div class="name">Xôi cốm</div><div class="price-line"><div class="price-block"><div class="label-inline">Giá bán</div><div class="value price" data-raw="18000">18k</div></div><div class="price-block"><div class="label-inline">Thành tiền</div><div class="value subtotal">0</div></div></div><div class="qty-row"><label>Số lượng <input type="number" class="qty" /></label></div></div>
+
+    <div class="item"><div class="name">Chạo chay</div><div class="price-line"><div class="price-block"><div class="label-inline">Giá bán</div><div class="value price" data-raw="40000">40k</div></div><div class="price-block"><div class="label-inline">Thành tiền</div><div class="value subtotal">0</div></div></div><div class="qty-row"><label>Số lượng <input type="number" class="qty" /></label></div></div>
+
+    <div class="item"><div class="name">Cốm xào</div><div class="price-line"><div class="price-block"><div class="label-inline">Giá bán</div><div class="value price" data-raw="18000">18k</div></div><div class="price-block"><div class="label-inline">Thành tiền</div><div class="value subtotal">0</div></div></div><div class="qty-row"><label>Số lượng <input type="number" class="qty" /></label></div></div>
+
+    <div class="item"><div class="name">Canh mọc chay</div><div class="price-line"><div class="price-block"><div class="label-inline">Giá bán</div><div class="value price" data-raw="60000">60k</div></div><div class="price-block"><div class="label-inline">Thành tiền</div><div class="value subtotal">0</div></div></div><div class="qty-row"><label>Số lượng <input type="number" class="qty" /></label></div></div>
+
   </div>
 
   <div class="controls">
@@ -94,6 +154,16 @@
   <div class="total">Tổng tiền: <span id="total">0</span></div>
 
   <div class="page-bottom-padding" aria-hidden="true"></div>
+
+  <div class="mobile-total-bar" id="mobileBar" style="display:none">
+    <div>
+      <div class="small">Tổng</div>
+      <div id="mobile_total" style="font-weight:700">0</div>
+    </div>
+    <div>
+      <button id="checkoutBtn">Thanh toán</button>
+    </div>
+  </div>
 
   <script>
     function formatK(num) {
@@ -166,6 +236,7 @@
       el.addEventListener('focus',(e)=>{ e.target.value=String(e.target.dataset.raw||'0'); setTimeout(()=>{try{e.target.setSelectionRange(e.target.value.length,e.target.value.length)}catch(err){}},0); });
       el.addEventListener('blur',(e)=>{ const n=parseRaw(e.target.value)||parseRaw(e.target.dataset.raw); e.target.dataset.raw=n; e.target.value=formatVND(n); calculate(); });
     }
+    document.getElementById('checkoutBtn').addEventListener('click',()=>{ alert('Thanh toán — demo. Total: '+document.getElementById('total').textContent) });
     init();
   </script>
 </body>

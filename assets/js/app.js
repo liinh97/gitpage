@@ -33,11 +33,11 @@ document.addEventListener('DOMContentLoaded', async () => {
   // data
   const RAW = [
     ["Nem TCC",6000],
-    ["Nem TCC xù", {Chín:7000, Sống:4500}],
-    ["Nem TCC vỏ giòn", {Chín:7500, Sống:5500}],
-    ["Nem TCC phomai", {Chín:13500, Sống:11500}],
-    ["Bánh rán mặn",9000],
-    ["Bánh rán phomai",9000],
+    ["Nem TCC xù", {Chín:6500, Sống:4000}],
+    ["Nem TCC vỏ giòn", {Chín:7000, Sống:5000}],
+    ["Nem TCC phomai", {Chín:13000, Sống:11000}],
+    ["Bánh rán mặn",8000],
+    ["Bánh rán phomai",8000],
     ["Khoai tây chiên",35000],
     ["Chân gà rút xương",80000],
     ["Trà chanh",15000],

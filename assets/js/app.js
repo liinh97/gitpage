@@ -55,6 +55,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   // init modules
   products.initProducts({ RAW, FAV_INIT });
+  products.resetQuantities();
   initPayment();
   initInvoiceUI({ products });
   initInvoices({ client, products, setUIMode });

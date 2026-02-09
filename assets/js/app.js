@@ -55,7 +55,6 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   // init modules
   products.initProducts({ RAW, FAV_INIT });
-  products.resetQuantities();
   initPayment();
   initInvoiceUI({ products });
   initInvoices({ client, products, setUIMode });
@@ -64,6 +63,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   // top controls
   document.getElementById('showInvoicesBtn').onclick = () => setUIMode('invoices');
   document.getElementById('collapseBtn').onclick = () => setUIMode('items');
+  document.getElementById('resetBtn').onclick = () => products.resetQuantities();
 
   // initial
   setUIMode('items');

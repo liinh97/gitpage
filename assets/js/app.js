@@ -40,8 +40,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     ["Bánh rán phomai",8000],
     ["Khoai tây chiên",35000],
     ["Chân gà rút xương",80000],
-    ["Trà chanh",15000],
-    ["Trà đá",10000],
+    ["Trà quất",10000],
     ["Bánh xèo nhật chay", {Nhỏ:30000, To:60000}],
     ["Gà chiên mắm",35000],
     ["Thịt chưng mắm tép",35000],
@@ -51,7 +50,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     ["Xôi cốm",18000],
     ["Cốm xào",18000],
   ];
-  const FAV_INIT = ["Bánh rán mặn", "Bánh rán phomai", "Nem TCC xù", "Nem TCC vỏ giòn", "Nem TCC phomai", "Chân gà rút xương", "Khoai tây chiên", "Trà chanh"];
+  const FAV_INIT = ["Bánh rán mặn", "Bánh rán phomai", "Nem TCC xù", "Nem TCC vỏ giòn", "Nem TCC phomai", "Chân gà rút xương", "Khoai tây chiên", "Trà quất"];
 
   // init modules
   products.initProducts({ RAW, FAV_INIT });
@@ -100,5 +99,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
   }
 });
+
 
 

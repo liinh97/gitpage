@@ -40,6 +40,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     ["Bánh rán phomai",8000],
     ["Khoai tây chiên",35000],
     ["Chân gà rút xương",80000],
+    ["Nem tảng 0.5kg",145000],
+    ["Nem tảng 1kg",280000],
     ["Trà quất",10000],
     ["Nước lọc",10000],
     ["Coca",15000],
@@ -107,6 +109,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
   }
 });
+
 
 
 

@@ -45,8 +45,8 @@ export async function showQRCodeForAmount(amount) {
 
   try {
     const body = {
-      accountNo: 1052949583,
-      accountName: "NGO THI THUY",
+      accountNo: 8382220997058,
+      accountName: "HO KINH DOANH GOC 6",
       acqId: 970436,
       amount,
       addInfo: "chuyen tien bang qr",

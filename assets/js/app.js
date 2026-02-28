@@ -33,14 +33,17 @@ document.addEventListener('DOMContentLoaded', async () => {
   // data
   const RAW = [
     ["Nem TCC",6000],
-    ["Nem TCC xù", {Chín:6500, Sống:4000}],
-    ["Nem TCC vỏ giòn", {Chín:7000, Sống:5000}],
+    ["Nem TCC xù", {Chín:6500, Sống:4200}],
+    ["Nem TCC vỏ giòn", {Chín:7000, Sống:5200}],
     ["Nem TCC phomai", {Chín:13000, Sống:11000}],
     ["Bánh rán mặn",8000],
     ["Bánh rán phomai",8000],
     ["Khoai tây chiên",35000],
     ["Chân gà rút xương",80000],
     ["Trà quất",10000],
+    ["Nước lọc",10000],
+    ["Coca",15000],
+    ["Sprite",15000],
     ["Bánh xèo nhật chay", {Nhỏ:30000, To:60000}],
     ["Gà chiên mắm",35000],
     ["Thịt chưng mắm tép",35000],
@@ -50,7 +53,12 @@ document.addEventListener('DOMContentLoaded', async () => {
     ["Xôi cốm",18000],
     ["Cốm xào",18000],
   ];
-  const FAV_INIT = ["Bánh rán mặn", "Bánh rán phomai", "Nem TCC xù", "Nem TCC vỏ giòn", "Nem TCC phomai", "Chân gà rút xương", "Khoai tây chiên", "Trà quất"];
+  const FAV_INIT = [
+    "Nem TCC xù", "Nem TCC vỏ giòn", "Nem TCC phomai",
+    "Bánh rán mặn", "Bánh rán phomai",
+    "Chân gà rút xương", "Khoai tây chiên",
+    "Trà quất", "Nước lọc", "Coca", "Sprite"
+  ];
 
   // init modules
   products.initProducts({ RAW, FAV_INIT });
@@ -99,6 +107,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
   }
 });
+
 
 
 

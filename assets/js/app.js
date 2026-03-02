@@ -44,6 +44,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     ["Nem tảng 0.5kg",145000],
     ["Nem tảng 1kg",280000],
     ["Trà quất",10000],
+    ["Trà chanh",10000],
     ["Nước lọc",10000],
     ["Coca",15000],
     ["Sprite",15000],
@@ -60,7 +61,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     "Nem TCC xù", "Nem TCC vỏ giòn", "Nem TCC phomai",
     "Bánh rán mặn", "Bánh rán phomai",
     "Chân gà rút xương", "Khoai tây chiên",
-    "Trà quất", "Nước lọc", "Coca", "Sprite"
+    "Trà quất", "Trà chanh", "Nước lọc", "Coca", "Sprite"
   ];
 
   // init modules
@@ -110,6 +111,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
   }
 });
+
 
 
 

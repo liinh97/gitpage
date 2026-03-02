@@ -50,6 +50,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     ["Sprite",15000],
     ["Bánh xèo nhật chay", {Nhỏ:30000, To:60000}],
     ["Gà chiên mắm",35000],
+    ["Lạp xưởng",15000],
     ["Thịt chưng mắm tép",35000],
     ["Bún thang chay",45000],
     ["Xôi nấm",45000],
@@ -111,6 +112,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
   }
 });
+
 
 
 

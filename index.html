@@ -190,7 +190,13 @@
   </div>
 
   <!-- ===== MODAL STATS ===== -->
-  <div class="modal-backdrop" id="statsBackdrop" style="display:none;">
+  <div class="modal-backdrop" id="statsBackdrop"
+    style="
+      display:none;
+      overflow:auto;
+      align-items:flex-start;
+      padding:12px 0;
+    ">
     <div class="modal" role="document"
       style="
         max-width:980px;
@@ -198,6 +204,8 @@
         max-height:92vh;
         display:flex;
         flex-direction:column;
+        gap:12px;
+        min-height:0;
       ">
       <div style="display:flex; justify-content:space-between; align-items:center; gap:10px;">
         <h2 style="margin:0;">Thống kê doanh thu & lãi</h2>
@@ -245,12 +253,11 @@
 
       <!-- Table -->
       <div style="
-        margin-top:12px;
         overflow:auto;
         border:1px solid #e6e9ef;
         border-radius:10px;
         flex:1;
-        min-height:220px;
+        min-height:0;
       ">
         <table style="width:100%; border-collapse:collapse; min-width:860px;">
           <thead style="position:sticky; top:0; z-index:2;">

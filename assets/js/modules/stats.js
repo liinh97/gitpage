@@ -36,7 +36,7 @@ const ITEM_COST_OVERRIDES = {
   "Nước lọc": 3250,
   "Coca": 7292,
   "Sprite": 7000,
-  "Thịt chưng mắm tép": 0,
+  "Thịt chưng mắm tép": 31500,
   "Bún thang chay": 0,
   "Xôi nấm": 0,
   "Ruốc nấm": 0,

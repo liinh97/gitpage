@@ -15,22 +15,36 @@ const DEFAULT_BASE_COST = 2000;
 // unit cost / 1 đơn vị món
 // cost = 0 => bán hộ
 const ITEM_COST_OVERRIDES = {
-  "Nem TCC": 3000,
-  "Nem TCC xù": 3000,
-  "Nem TCC vỏ giòn": 3000,
-  "Nem TCC phomai": 0,     // ví dụ bán hộ
-  "Bánh rán mặn": 0,       // ví dụ bán hộ
-  "Bánh rán phomai": 0,    // ví dụ bán hộ
+  "Nem TCC": 3050,
+  "Nem TCC xù": 3175,
+  "Nem TCC vỏ giòn": 3350,
+  "Nem TCC phomai": 7116,
+  "Bánh rán mặn": 0,
+  "Bánh rán phomai": 0,
+  "Bánh rán cốm dừa": 0,
   "Khoai tây chiên": 0,
   "Chân gà rút xương": 0,
   "Bánh xèo nhật chay": 0,
   "Gà chiên mắm": 0,
+  "Lạp xưởng": 7500,
+  "Bánh gối": 0,
+  "Nem tảng 0.5kg": 120000,
+  "Nem tảng 1kg": 240000,
+  "Trà đá": 0,
+  "Trà quất": 0,
+  "Trà chanh": 0,
+  "Nước lọc": 3250,
+  "Coca": 7292,
+  "Sprite": 7000,
   "Thịt chưng mắm tép": 0,
   "Bún thang chay": 0,
   "Xôi nấm": 0,
   "Ruốc nấm": 0,
   "Xôi cốm": 0,
+  "Giò chay": 0,
   "Cốm xào": 0,
+  "Hoa quả theo mùa": 0,
+  "Nộm đu đủ giã lạc": 0,
 };
 
 export function initStats({ client, products }) {

@@ -6,7 +6,7 @@ let _client = null;
 let _products = null;
 
 // ====== CONFIG DEFAULTS (bạn đổi được trong UI) ======
-const DEFAULT_COST_RATIO = 0; // thiếu cost -> 0% (bán hộ)
+const DEFAULT_COST_RATIO = 0.4; // thiếu cost -> 0% (bán hộ)
 const DEFAULT_EXTRA_EVERY_N = 7;
 const DEFAULT_EXTRA_AVG_COST = 500;
 const DEFAULT_BASE_COST = 2000;
@@ -123,7 +123,7 @@ async function runStats() {
   const extraAvgCost = parseRaw(document.getElementById('statsExtraAvgCost')?.dataset?.raw || String(DEFAULT_EXTRA_AVG_COST));
 
   // build cost map from products list + overrides
-  const { costMap, costZeroItems } = buildCostMapFromProducts();
+  const { costMap, missingCostItems } = buildCostMapFromProducts();
 
   const paidInvoices = await loadAllInvoicesByStatus({ status: 2, fromDate, toDate });
   const canceledInvoices = await loadAllInvoicesByStatus({ status: 3, fromDate, toDate });
@@ -132,7 +132,7 @@ async function runStats() {
     invoices: paidInvoices,
     canceledCount: canceledInvoices.length,
     costMap,
-    costZeroItems,
+    missingCostItems,
     baseCostPerInvoice: baseCost,
     extraEveryN,
     extraAvgCost,
@@ -143,39 +143,52 @@ async function runStats() {
 
 function buildCostMapFromProducts() {
   const costMap = new Map();
-  const costZeroItems = new Set(); // items cost=0 => bán hộ
+  const missingCostItems = new Set();
 
   const productsList = state?.PRODUCTS || _products?.state?.PRODUCTS || [];
 
-  // init from products list
   for (const p of productsList) {
     const name = p?.name;
     if (!name) continue;
 
-    // override first
+    // override
     if (Object.prototype.hasOwnProperty.call(ITEM_COST_OVERRIDES, name)) {
-      const v = Number(ITEM_COST_OVERRIDES[name]) || 0;
-      costMap.set(name, v);
-      if (v <= 0) costZeroItems.add(name);
+      const v = Number(ITEM_COST_OVERRIDES[name]);
+      if (Number.isFinite(v) && v > 0) {
+        costMap.set(name, v);
+      } else {
+        // override <=0 coi như chưa khai (không cho bán hộ nữa)
+        missingCostItems.add(name);
+        const price = Number(p?.variants?.[0]?.price || 0);
+        const est = Math.round(price * DEFAULT_COST_RATIO);
+        costMap.set(name, est);
+      }
       continue;
     }
 
-    // missing -> estimate by ratio (0%)
+    // no override -> estimate by ratio + warn
     const price = Number(p?.variants?.[0]?.price || 0);
-    const est = Math.round(price * DEFAULT_COST_RATIO); // 0
+    const est = Math.round(price * DEFAULT_COST_RATIO);
     costMap.set(name, est);
-    if (est <= 0) costZeroItems.add(name);
+    missingCostItems.add(name);
   }
 
   // ensure overrides apply even if not in products list
-  for (const [k, v] of Object.entries(ITEM_COST_OVERRIDES)) {
-    const n = Number(v) || 0;
-    costMap.set(k, n);
-    if (n <= 0) costZeroItems.add(k);
-    else costZeroItems.delete(k);
+  for (const [k, vRaw] of Object.entries(ITEM_COST_OVERRIDES)) {
+    const v = Number(vRaw);
+    if (Number.isFinite(v) && v > 0) {
+      costMap.set(k, v);
+      missingCostItems.delete(k);
+    } else {
+      // <=0: coi như chưa khai
+      if (!costMap.has(k)) {
+        costMap.set(k, 0);
+      }
+      missingCostItems.add(k);
+    }
   }
 
-  return { costMap, costZeroItems };
+  return { costMap, missingCostItems };
 }
 
 async function loadAllInvoicesByStatus({ status, fromDate, toDate }) {
@@ -220,34 +233,30 @@ async function loadAllInvoicesByStatus({ status, fromDate, toDate }) {
 }
 
 /**
- * Core rules:
+ * Core rules (NEW):
  * - Ship: ignore completely (khách trả)
- * - Discount: allocate proportional to items subtotal
- * - Item with unitCost <= 0 => bán hộ:
- *     + show row but profit/margin/overhead/cost = 0
- *     + EXCLUDE from totals revenue/profit
- *     + EXCLUDE from overhead allocation base
- * - Overhead (base + expected extra) allocated ONLY among items with cost>0, proportional to net item revenue (after discount share)
+ * - Discount: allocate proportional to ALL items subtotal (không có bán hộ)
+ * - Every item must have unitCost (override hoặc ước lượng theo ratio)
+ * - Overhead (base + expected extra) is per-invoice, allocated to ALL items
+ *   proportional to net item revenue (after discount share)
  */
 function computeStats({
   invoices,
   canceledCount = 0,
   costMap,
-  costZeroItems,              // Set hoặc array đều được
+  missingCostItems,
   baseCostPerInvoice,
   extraEveryN,
   extraAvgCost,
 }) {
   let invoiceCount = 0;
 
-  // totals (ONLY cost>0 group)
-  let totalRevenueIncluded = 0; // doanh thu tính lãi (sau discount, chỉ cost>0)
-  let totalProfitIncluded = 0;  // tổng lãi (chỉ cost>0)
+  let totalRevenueAllItems = 0;     // tổng tiền món sau giảm (tất cả món)
+  let totalRevenueIncluded = 0;     // giờ = totalRevenueAllItems (giữ tên cũ cho UI nếu muốn)
   let totalItemsCostIncluded = 0;
   let totalOverhead = 0;
+  let totalProfitIncluded = 0;
 
-  // additional info
-  let totalRevenueAllItems = 0; // tổng tiền món (all items) - bán hộ KHÔNG trừ discount
   let totalShip = 0;
   let totalDiscount = 0;
 
@@ -267,21 +276,18 @@ function computeStats({
     totalShip += ship;
     totalDiscount += discount;
 
-    // ===== (A) TÍNH includedGross: tổng subtotal của nhóm cost>0 (để chia discount) =====
-    let includedGross = 0;
+    // (A) gross base for discount allocation: ALL items subtotal
+    let gross = 0;
     for (const it of items) {
-      const name = String(it?.name || '(Không tên)');
       const qty = Number(it.qty) || 0;
       const sub = Math.max(0, Number(it.subtotal) || 0);
-      if (!name || qty <= 0 || sub <= 0) continue;
-
-      const unitCost = Number(costMap.get(name) ?? 0);
-      const passThrough = unitCost <= 0;
-      if (!passThrough) includedGross += sub;
+      if (qty <= 0 || sub <= 0) continue;
+      gross += sub;
     }
 
-    // ===== (B) TÍNH includedNetRevenueBase (sau discount) để phân bổ overhead =====
-    let includedNetRevenueBase = 0;
+    // (B) compute net revenue per item after discount share, and sum base for overhead allocation
+    let netBase = 0;
+    const normalized = []; // cache per item in this invoice
 
     for (const it of items) {
       const name = String(it?.name || '(Không tên)');
@@ -289,76 +295,39 @@ function computeStats({
       const sub = Math.max(0, Number(it.subtotal) || 0);
       if (!name || qty <= 0 || sub <= 0) continue;
 
-      const unitCost = Number(costMap.get(name) ?? 0);
-      const passThrough = unitCost <= 0;
-
-      // bán hộ: KHÔNG trừ discount
-      const discountShare = (!passThrough && includedGross > 0)
-        ? (discount * (sub / includedGross))
-        : 0;
-
+      const discountShare = gross > 0 ? (discount * (sub / gross)) : 0;
       const netSub = Math.max(0, sub - discountShare);
 
-      // tổng tiền món (all items) để hiển thị: bán hộ giữ nguyên sub
-      totalRevenueAllItems += passThrough ? sub : netSub;
+      normalized.push({ name, qty, sub, netSub });
+      netBase += netSub;
 
-      if (!passThrough) {
-        includedNetRevenueBase += netSub;
-      }
+      totalRevenueAllItems += netSub;
     }
 
-    // ===== (C) overhead chỉ phân bổ cho nhóm cost>0, và chỉ khi invoice có món cost>0 =====
+    // (C) overhead per invoice
     const orderOverhead = (Number(baseCostPerInvoice) || 0) + expectedExtraPerInvoice;
-    const overheadToAllocate = includedNetRevenueBase > 0 ? orderOverhead : 0;
+    const overheadToAllocate = netBase > 0 ? orderOverhead : 0;
     totalOverhead += overheadToAllocate;
 
-    // ===== (D) AGGREGATE PER ITEM =====
-    for (const it of items) {
-      const name = String(it?.name || '(Không tên)');
-      const qty = Number(it.qty) || 0;
-      const sub = Math.max(0, Number(it.subtotal) || 0);
-      if (!name || qty <= 0 || sub <= 0) continue;
+    // (D) aggregate per item
+    for (const x of normalized) {
+      const { name, qty, netSub } = x;
 
-      const unitCost = Number(costMap.get(name) ?? 0);
-      const passThrough = unitCost <= 0;
+      const unitCost = Number(costMap.get(name));
+      const safeUnitCost = Number.isFinite(unitCost) && unitCost > 0 ? unitCost : 0;
 
-      // bán hộ: KHÔNG trừ discount
-      const discountShare = (!passThrough && includedGross > 0)
-        ? (discount * (sub / includedGross))
-        : 0;
-
-      const netSub = Math.max(0, sub - discountShare);
+      const cost = safeUnitCost * qty;
+      const overheadShare = netBase > 0 ? (overheadToAllocate * (netSub / netBase)) : 0;
+      const profit = netSub - cost - overheadShare;
 
       let row = perItem.get(name);
       if (!row) {
-        row = {
-          name,
-          qty: 0,
-          revenue: 0,    // hiển thị doanh thu: bán hộ dùng sub, còn lại dùng netSub
-          cost: 0,
-          overhead: 0,
-          profit: 0,
-          passThrough: false,
-        };
+        row = { name, qty: 0, revenue: 0, cost: 0, overhead: 0, profit: 0 };
         perItem.set(name, row);
       }
 
       row.qty += qty;
-      row.revenue += passThrough ? sub : netSub;
-
-      if (passThrough) {
-        row.passThrough = true;
-        // bán hộ: cost/overhead/profit = 0
-        continue;
-      }
-
-      const cost = unitCost * qty;
-      const overheadShare = includedNetRevenueBase > 0
-        ? (overheadToAllocate * (netSub / includedNetRevenueBase))
-        : 0;
-
-      const profit = netSub - cost - overheadShare;
-
+      row.revenue += netSub;
       row.cost += cost;
       row.overhead += overheadShare;
       row.profit += profit;
@@ -372,10 +341,6 @@ function computeStats({
   const margin = totalRevenueIncluded > 0 ? (totalProfitIncluded / totalRevenueIncluded) : 0;
 
   const items = [...perItem.values()].sort((a, b) => (b.profit - a.profit));
-
-  const passThroughList = items
-    .filter(x => x.passThrough || (Number(costMap.get(x.name) ?? 0) <= 0))
-    .map(x => x.name);
 
   return {
     invoiceCount,
@@ -393,8 +358,7 @@ function computeStats({
     expectedExtraPerInvoice,
 
     items,
-    passThroughList,
-    costZeroItems: Array.isArray(costZeroItems) ? costZeroItems : [...(costZeroItems || [])],
+    missingCostItems: Array.isArray(missingCostItems) ? missingCostItems : [...(missingCostItems || [])],
   };
 }
 
@@ -420,13 +384,14 @@ function renderStats(res) {
   `;
 
   // info: pass-through items
-  const passThrough = (res.passThroughList || []).filter(Boolean);
+  const missing = (res.missingCostItems || []).filter(Boolean);
   if (warnEl) {
-    if (passThrough.length) {
+    if (missing.length) {
       warnEl.classList.remove('hidden');
       warnEl.innerHTML = `
-        Có <strong>${passThrough.length}</strong> món đang <strong>cost = 0</strong> (coi như <strong>bán hộ</strong>).
-        Những món này sẽ <strong>không</strong> được cộng vào tổng doanh thu & tổng lãi, nhưng vẫn hiển thị ở bảng (lãi = 0).
+        Có <strong>${missing.length}</strong> món <strong>chưa khai cost chuẩn</strong>.
+        Hệ thống đang <strong>ước lượng theo DEFAULT_COST_RATIO</strong> để thống kê không bị sai về 0.
+        Bạn nên điền dần vào <code>ITEM_COST_OVERRIDES</code>.
       `;
     } else {
       warnEl.classList.add('hidden');
@@ -441,17 +406,15 @@ function renderStats(res) {
 
   tbody.innerHTML = res.items.map(r => {
     const revenue = r.revenue || 0;
-
-    // bán hộ => lãi/margin/overhead/cost = 0
-    const cost = r.passThrough ? 0 : (r.cost || 0);
-    const overhead = r.passThrough ? 0 : (r.overhead || 0);
-    const profit = r.passThrough ? 0 : (r.profit || 0);
-    const m = (!r.passThrough && revenue > 0) ? (profit / revenue) : 0;
+    const cost = r.cost || 0;
+    const overhead = r.overhead || 0;
+    const profit = r.profit || 0;
+    const m = revenue > 0 ? (profit / revenue) : 0;
 
     return `
       <tr>
         <td style="padding:10px; border-bottom:1px solid #eef1f6;">
-          ${escapeCell(r.name)} ${r.passThrough ? `<span class="muted">(bán hộ)</span>` : ``}
+          ${escapeCell(r.name)}
         </td>
         <td style="padding:10px; text-align:right; border-bottom:1px solid #eef1f6;">${r.qty}</td>
         <td style="padding:10px; text-align:right; border-bottom:1px solid #eef1f6;">${formatVND(Math.round(revenue))} ₫</td>

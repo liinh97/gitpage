@@ -75,12 +75,6 @@ export function initStats({ client, products }) {
     backdrop.style.display = 'flex';
   });
 
-  // OPEN (fix: remove hidden because .hidden is display:none!important)
-  btn.addEventListener('click', () => {
-    backdrop.classList.remove('hidden');
-    backdrop.style.display = 'flex';
-  });
-
   // CLOSE
   function close() {
     backdrop.style.display = 'none';

@@ -1,6 +1,6 @@
 import { state } from '../core/state.js';
 import { formatVND, parseRaw, escapeHtml, getTodayYYYYMMDD } from '../core/utils.js';
-import { showToast, openInvoiceModalFromInvoiceData } from './invoice-ui.js';
+import { showToast, openInvoiceModalFromInvoiceData, pickPaymentMethod } from './invoice-ui.js';
 
 const INVOICE_STATUS_MAP = {
   1: { text: 'Đơn mới', class: 'st-new' },
@@ -175,7 +175,7 @@ function renderInvoiceRow({ row, client, products }) {
   el.querySelector('.small-pay')?.addEventListener('click', async (e) => {
     e.stopPropagation();
   
-    const method = askPaymentMethod();
+    const method = await pickPaymentMethod();
     if (!method) return;
   
     await markInvoicePaid({ client, products, id, paymentMethod: method });
@@ -188,7 +188,7 @@ function renderInvoiceRow({ row, client, products }) {
     const latestPaymentStatus = normalizePaymentStatus(d.paymentStatus);
   
     if (latestPaymentStatus !== 'paid') {
-      const method = askPaymentMethod();
+      const method = await pickPaymentMethod();
       if (!method) return;
   
       await completeInvoice({
@@ -233,28 +233,6 @@ function normalizePaymentStatus(value) {
 
 function normalizePaymentMethod(value) {
   return value === 'cash' ? 'cash' : 'bank';
-}
-
-function askPaymentMethod() {
-  const raw = prompt(
-    'Chọn hình thức thanh toán:\n- Nhập 1: Chuyển khoản\n- Nhập 2: Tiền mặt',
-    '1'
-  );
-
-  if (raw === null) return null;
-
-  const v = String(raw).trim().toLowerCase();
-
-  if (v === '1' || v === 'bank' || v === 'ck' || v === 'chuyển khoản' || v === 'chuyen khoan') {
-    return 'bank';
-  }
-
-  if (v === '2' || v === 'cash' || v === 'tm' || v === 'tiền mặt' || v === 'tien mat') {
-    return 'cash';
-  }
-
-  alert('Giá trị không hợp lệ. Chỉ chọn 1 hoặc 2.');
-  return null;
 }
 
 async function loadInvoiceToItems({ client, products, invoiceId }) {

@@ -63,21 +63,23 @@ export async function renderInvoiceList({ client = _client, products = _products
     }
 
     const statusFilter =
-      state.invoiceFilters.status === '' || state.invoiceFilters.status === null
-        ? undefined
-        : Number(state.invoiceFilters.status);
-    
-    const queryParams = {
-      date: state.invoiceFilters.date,
-      limitNum: state.invoiceFilters.limit,
-      cursor: queryCursor,
-    };
-    
-    if (typeof statusFilter !== 'undefined' && !Number.isNaN(statusFilter)) {
-      queryParams.status = statusFilter;
-    }
-    
-    const res = await client.listInvoicesByQuery(queryParams);
+    state.invoiceFilters.status === '' || state.invoiceFilters.status === null
+      ? undefined
+      : Number(state.invoiceFilters.status);
+  
+  const queryCursor = state.invoicePaging.currentCursor || null;
+  
+  const queryParams = {
+    date: state.invoiceFilters.date,
+    limitNum: state.invoiceFilters.limit,
+    cursor: queryCursor,
+  };
+  
+  if (typeof statusFilter !== 'undefined' && !Number.isNaN(statusFilter)) {
+    queryParams.status = statusFilter;
+  }
+  
+  const res = await client.listInvoicesByQuery(queryParams);
 
     listRoot.innerHTML = '';
 
@@ -100,7 +102,7 @@ export async function renderInvoiceList({ client = _client, products = _products
 
   } catch (err) {
     console.error(err);
-    listRoot.innerHTML = '<div class="error">Không tải được hoá đơn</div>';
+    listRoot.innerHTML = `<div class="error">Không tải được hoá đơn: ${escapeHtml(err.message || String(err))}</div>`;
     if (prevBtn) prevBtn.disabled = state.invoicePaging.cursorStack.length === 0;
     if (nextBtn) nextBtn.disabled = true;
   }
@@ -306,11 +308,6 @@ async function openInvoiceDetail({ client, id, mode }) {
   
   data.paymentStatus = normalizePaymentStatus(data.paymentStatus);
   data.paymentMethod = normalizePaymentMethod(data.paymentMethod);
-
-  // default payment method for old invoices
-  if (!data.paymentMethod) {
-    data.paymentMethod = 'cash';
-  }
 
   state.currentInvoiceId = id;
 

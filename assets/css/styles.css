@@ -567,3 +567,11 @@ body.mode-invoices #invoiceList .item{
     min-width: 120px;
   }
 }
+
+.invoice-items-summary {
+  margin-top: 6px;
+  font-size: 13px;
+  line-height: 1.45;
+  word-break: break-word;
+}
+

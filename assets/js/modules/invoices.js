@@ -233,11 +233,6 @@ function renderInvoiceRow({ row, client, products }) {
   return el;
 }
 
-function normalizePaymentMethod(value) {
-  if (value === 'bank') return 'bank';
-  return 'cash'; // đơn cũ hoặc dữ liệu bẩn => mặc định tiền mặt
-}
-
 function normalizePaymentStatus(value) {
   return value === 'paid' ? 'paid' : 'unpaid';
 }

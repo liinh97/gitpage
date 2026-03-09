@@ -64,17 +64,20 @@ export async function renderInvoiceList({ client = _client, products = _products
 
     const statusFilter =
       state.invoiceFilters.status === '' || state.invoiceFilters.status === null
-        ? null
+        ? undefined
         : Number(state.invoiceFilters.status);
-
-    const queryCursor = state.invoicePaging.currentCursor || null;
-
-    const res = await client.listInvoicesByQuery({
-      status: statusFilter,
+    
+    const queryParams = {
       date: state.invoiceFilters.date,
       limitNum: state.invoiceFilters.limit,
       cursor: queryCursor,
-    });
+    };
+    
+    if (typeof statusFilter !== 'undefined' && !Number.isNaN(statusFilter)) {
+      queryParams.status = statusFilter;
+    }
+    
+    const res = await client.listInvoicesByQuery(queryParams);
 
     listRoot.innerHTML = '';
 
@@ -533,7 +536,7 @@ function attachInvoiceFilterInit() {
 function attachInvoiceFilterHandlers({ client, products }) {
   document.getElementById('filterStatus')?.addEventListener('change', async (e) => {
     const raw = e.target.value;
-    state.invoiceFilters.status = raw === '' ? null : Number(raw);
+    state.invoiceFilters.status = raw === '' ? '' : Number(raw);
     resetInvoicePaging();
     await renderInvoiceList({ client, products });
   });

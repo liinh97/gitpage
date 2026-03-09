@@ -58,19 +58,17 @@ export function initStats({ client, products }) {
   const toggleSummaryBtn = document.getElementById('toggleStatsSummaryBtn');
   const summaryWrap = document.getElementById('statsSummaryWrap');
 
-  if (!btn || !backdrop || !runBtn) return;
+  if (!btn || !backdrop || !runBtn || !toggleSummaryBtn || !summaryWrap) return;
 
-  // init inputs defaults
   setFormattedMoneyInput('statsBaseCost', DEFAULT_BASE_COST);
   setFormattedMoneyInput('statsExtraAvgCost', DEFAULT_EXTRA_AVG_COST);
 
   const extraEveryNEl = document.getElementById('statsExtraEveryN');
   if (extraEveryNEl) extraEveryNEl.value = String(DEFAULT_EXTRA_EVERY_N);
 
-  // mặc định ẩn summary + nút toggle
-  summaryWrap?.classList.add('hidden');
-  toggleSummaryBtn?.classList.add('hidden');
-  if (toggleSummaryBtn) toggleSummaryBtn.textContent = 'Hiển thị tổng quát';
+  summaryWrap.classList.add('hidden');
+  toggleSummaryBtn.classList.add('hidden');
+  toggleSummaryBtn.textContent = 'Hiển thị tổng quát';
 
   setTodayRange();
 
@@ -79,18 +77,18 @@ export function initStats({ client, products }) {
     backdrop.classList.remove('hidden');
     backdrop.style.display = 'flex';
 
-    summaryWrap?.classList.add('hidden');
-    toggleSummaryBtn?.classList.add('hidden');
-    if (toggleSummaryBtn) toggleSummaryBtn.textContent = 'Hiển thị tổng quát';
+    summaryWrap.classList.add('hidden');
+    toggleSummaryBtn.classList.add('hidden');
+    toggleSummaryBtn.textContent = 'Hiển thị tổng quát';
   });
 
   function close() {
     backdrop.style.display = 'none';
     backdrop.classList.add('hidden');
 
-    summaryWrap?.classList.add('hidden');
-    toggleSummaryBtn?.classList.add('hidden');
-    if (toggleSummaryBtn) toggleSummaryBtn.textContent = 'Hiển thị tổng quát';
+    summaryWrap.classList.add('hidden');
+    toggleSummaryBtn.classList.add('hidden');
+    toggleSummaryBtn.textContent = 'Hiển thị tổng quát';
   }
 
   closeBtn?.addEventListener('click', close);
@@ -103,9 +101,7 @@ export function initStats({ client, products }) {
     if (e.key === 'Escape' && !backdrop.classList.contains('hidden')) close();
   });
 
-  toggleSummaryBtn?.addEventListener('click', () => {
-    if (!summaryWrap) return;
-
+  toggleSummaryBtn.addEventListener('click', () => {
     const isHidden = summaryWrap.classList.contains('hidden');
     summaryWrap.classList.toggle('hidden', !isHidden);
     toggleSummaryBtn.textContent = isHidden ? 'Ẩn tổng quát' : 'Hiển thị tổng quát';
@@ -119,9 +115,9 @@ export function initStats({ client, products }) {
     try {
       await runStats();
 
-      toggleSummaryBtn?.classList.remove('hidden');
-      summaryWrap?.classList.add('hidden');
-      if (toggleSummaryBtn) toggleSummaryBtn.textContent = 'Hiển thị tổng quát';
+      toggleSummaryBtn.classList.remove('hidden');
+      summaryWrap.classList.add('hidden');
+      toggleSummaryBtn.textContent = 'Hiển thị tổng quát';
     } finally {
       runBtn.disabled = false;
       runBtn.textContent = oldText;
@@ -412,11 +408,6 @@ function renderStats(res) {
   const summaryWrap = document.getElementById('statsSummaryWrap');
 
   if (!summaryEl || !tbody) return;
-
-  if (summaryWrap && !summaryWrap.dataset.initialized) {
-    summaryWrap.style.display = 'none';
-    summaryWrap.dataset.initialized = '1';
-  }
 
   summaryEl.innerHTML = `
     <div class="stats-card">

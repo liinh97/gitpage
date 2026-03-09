@@ -164,7 +164,7 @@ async function runStats() {
 
   const allInvoices = await loadAllInvoicesInRange({ fromDate, toDate });
 
-  const paidInvoices = allInvoices.filter(inv => normalizePaymentStatus(inv?.paymentStatus) === 'paid');
+  const paidInvoices = allInvoices.filter(inv => normalizePaymentStatus(inv?.paymentStatus, inv) === 'paid');
   const canceledInvoices = allInvoices.filter(inv => Number(inv?.status) === 3);
   
   const result = computeStats({
@@ -299,7 +299,7 @@ function computeStats({
   const perItem = new Map();
 
   for (const inv of invoices) {
-    const paymentStatus = normalizePaymentStatus(inv?.paymentStatus);
+    const paymentStatus = normalizePaymentStatus(inv?.paymentStatus, inv);
     if (paymentStatus !== 'paid') continue;
 
     invoiceCount++;
@@ -567,8 +567,17 @@ function parseYYYYMMDDEnd(s) {
   return new Date(y, m - 1, d, 23, 59, 59, 999);
 }
 
-function normalizePaymentStatus(value) {
-  return value === 'paid' ? 'paid' : 'unpaid';
+function normalizePaymentStatus(value, invoice = null) {
+  if (value === 'paid') return 'paid';
+
+  // fallback cho dữ liệu cũ:
+  // trước đây status=2 là đơn hoàn thành / đã xử lý xong,
+  // chưa có field paymentStatus thì coi như đã thanh toán
+  if (!value && Number(invoice?.status) === 2) {
+    return 'paid';
+  }
+
+  return 'unpaid';
 }
 
 function normalizePaymentMethod(value) {

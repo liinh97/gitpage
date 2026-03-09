@@ -21,6 +21,7 @@ const PAYMENT_METHOD_MAP = {
 let _client = null;
 let _products = null;
 let _setUIMode = null;
+let _invoicesInitialized = false;
 
 export function initInvoices({ client, products, setUIMode }) {
   if (!client?.listInvoicesByQuery) {
@@ -31,24 +32,26 @@ export function initInvoices({ client, products, setUIMode }) {
   _products = products;
   _setUIMode = typeof setUIMode === 'function' ? setUIMode : null;
 
+  if (_invoicesInitialized) return;
+  _invoicesInitialized = true;
+
   attachInvoiceFilterInit();
   attachInvoiceFilterHandlers({ client: _client, products: _products });
   attachInvoicePagingHandlers({ client: _client, products: _products });
   attachInvoiceTabHandlers({ client: _client, products: _products });
   attachSaveHandler({ client: _client, products: _products });
-
-  // row click handlers are attached during render
 }
 
 export async function renderInvoiceList({ client = _client, products = _products, resetPaging = false } = {}) {
   const listRoot = document.getElementById('invoiceList');
   const emptyEl = document.getElementById('invoiceListEmpty');
+  const prevBtn = document.getElementById('prevPageBtn');
+  const nextBtn = document.getElementById('nextPageBtn');
+
   if (!listRoot) return;
 
   if (resetPaging) {
-    state.invoicePaging.cursorStack = [];
-    state.invoicePaging.currentCursor = null;
-    state.invoiceFilters.page = 1;
+    resetInvoicePaging();
   }
 
   listRoot.innerHTML = '<div class="muted">Đang tải...</div>';
@@ -64,32 +67,39 @@ export async function renderInvoiceList({ client = _client, products = _products
         ? null
         : Number(state.invoiceFilters.status);
 
+    const queryCursor = state.invoicePaging.currentCursor || null;
+
     const res = await client.listInvoicesByQuery({
       status: statusFilter,
       date: state.invoiceFilters.date,
       limitNum: state.invoiceFilters.limit,
-      cursor: state.invoicePaging.currentCursor,
+      cursor: queryCursor,
     });
 
     listRoot.innerHTML = '';
 
-    const rows = res?.rows || [];
+    const rows = Array.isArray(res?.rows) ? res.rows : [];
+    state.invoicePaging.nextCursor = res?.lastDoc || null;
+
     if (!rows.length) {
       emptyEl?.classList.remove('hidden');
-      document.getElementById('nextPageBtn') && (document.getElementById('nextPageBtn').disabled = true);
-      document.getElementById('prevPageBtn') && (document.getElementById('prevPageBtn').disabled = state.invoicePaging.cursorStack.length === 0);
+      if (prevBtn) prevBtn.disabled = state.invoicePaging.cursorStack.length === 0;
+      if (nextBtn) nextBtn.disabled = true;
       return;
     }
 
-    rows.forEach(row => listRoot.appendChild(renderInvoiceRow({ row, client, products })));
+    rows.forEach(row => {
+      listRoot.appendChild(renderInvoiceRow({ row, client, products }));
+    });
 
-    state.invoicePaging.currentCursor = res.lastDoc || null;
-    document.getElementById('prevPageBtn') && (document.getElementById('prevPageBtn').disabled = state.invoicePaging.cursorStack.length === 0);
-    document.getElementById('nextPageBtn') && (document.getElementById('nextPageBtn').disabled = !res.lastDoc);
+    if (prevBtn) prevBtn.disabled = state.invoicePaging.cursorStack.length === 0;
+    if (nextBtn) nextBtn.disabled = !state.invoicePaging.nextCursor;
 
   } catch (err) {
     console.error(err);
     listRoot.innerHTML = '<div class="error">Không tải được hoá đơn</div>';
+    if (prevBtn) prevBtn.disabled = state.invoicePaging.cursorStack.length === 0;
+    if (nextBtn) nextBtn.disabled = true;
   }
 }
 
@@ -337,31 +347,21 @@ function applyInvoiceMode({ status, mode }) {
   saveBtn.style.display = 'none';
 }
 
-async function changeInvoiceStatus({ client, products, id, newStatus, paymentMethod = null }) {
+async function changeInvoiceStatus({ client, products, id, newStatus }) {
   try {
-    if (typeof client.updateInvoiceStatus !== 'function') throw new Error('Thiếu updateInvoiceStatus');
+    if (typeof client.updateInvoiceStatus !== 'function') {
+      throw new Error('Thiếu updateInvoiceStatus');
+    }
 
     await client.signInAnonymouslyIfNeeded?.();
+    await client.updateInvoiceStatus(id, newStatus);
 
-    // nếu client hỗ trợ payload object thì dùng cách này
-    if (typeof client.updateInvoiceStatus === 'function') {
-      await client.updateInvoiceStatus(id, newStatus, paymentMethod ? { paymentMethod } : undefined);
-    }
-
-    // fallback: nếu API cũ không lưu được paymentMethod thì update riêng
-    if (paymentMethod && typeof client.updateInvoice === 'function') {
-      try {
-        await client.updateInvoice(id, { paymentMethod });
-      } catch (e) {
-        console.warn('Không cập nhật được paymentMethod bằng updateInvoice fallback:', e);
-      }
-    }
-
-    alert('Cập nhật trạng thái thành công.');
+    showToast('Cập nhật trạng thái thành công', 'success');
+    resetInvoicePaging();
     await renderInvoiceList({ client, products }).catch(() => {});
   } catch (err) {
     console.error(err);
-    alert('Cập nhật trạng thái thất bại: ' + (err.message || err));
+    showToast('Cập nhật trạng thái thất bại: ' + (err.message || err), 'error', 3200);
   }
 }
 
@@ -507,12 +507,13 @@ function attachInvoiceTabHandlers({ client, products }) {
 function resetInvoicePaging() {
   state.invoiceFilters.page = 1;
   state.invoicePaging.currentCursor = null;
+  state.invoicePaging.nextCursor = null;
   state.invoicePaging.cursorStack = [];
 }
 
 function attachInvoiceFilterInit() {
   state.invoiceFilters.date = getTodayYYYYMMDD();
-  state.invoiceFilters.status = 1; // default: đơn mới
+  state.invoiceFilters.status = 1;
   state.invoiceFilters.limit = Number(document.getElementById('filterLimit')?.value || 10);
   state.invoiceFilters.page = 1;
 
@@ -524,6 +525,9 @@ function attachInvoiceFilterInit() {
 
   const limitEl = document.getElementById('filterLimit');
   if (limitEl) limitEl.value = state.invoiceFilters.limit;
+
+  document.getElementById('prevPageBtn') && (document.getElementById('prevPageBtn').disabled = true);
+  document.getElementById('nextPageBtn') && (document.getElementById('nextPageBtn').disabled = true);
 }
 
 function attachInvoiceFilterHandlers({ client, products }) {
@@ -549,13 +553,22 @@ function attachInvoiceFilterHandlers({ client, products }) {
 
 function attachInvoicePagingHandlers({ client, products }) {
   document.getElementById('nextPageBtn')?.addEventListener('click', async () => {
-    state.invoicePaging.cursorStack.push(state.invoicePaging.currentCursor);
+    const nextCursor = state.invoicePaging.nextCursor || null;
+    if (!nextCursor) return;
+
+    state.invoicePaging.cursorStack.push(state.invoicePaging.currentCursor || null);
+    state.invoicePaging.currentCursor = nextCursor;
+    state.invoiceFilters.page = (state.invoiceFilters.page || 1) + 1;
+
     await renderInvoiceList({ client, products });
   });
 
   document.getElementById('prevPageBtn')?.addEventListener('click', async () => {
     if (!state.invoicePaging.cursorStack.length) return;
-    state.invoicePaging.currentCursor = state.invoicePaging.cursorStack.pop();
+
+    state.invoicePaging.currentCursor = state.invoicePaging.cursorStack.pop() || null;
+    state.invoiceFilters.page = Math.max(1, (state.invoiceFilters.page || 1) - 1);
+
     await renderInvoiceList({ client, products });
   });
 }
@@ -574,6 +587,7 @@ async function markInvoicePaid({ client, products, id, paymentMethod }) {
     }
 
     showToast(`Đã cập nhật thanh toán: ${PAYMENT_METHOD_MAP[paymentMethod || 'bank']}`, 'success');
+    resetInvoicePaging();
     await renderInvoiceList({ client, products }).catch(() => {});
   } catch (err) {
     console.error(err);
@@ -601,9 +615,7 @@ async function completeInvoice({ client, products, id, paymentMethod = 'bank', a
       throw new Error('Chỉ đơn mới mới có thể hoàn thành');
     }
 
-    const payload = {
-      status: 2,
-    };
+    const payload = { status: 2 };
 
     if (autoPay) {
       payload.paymentStatus = 'paid';
@@ -622,6 +634,7 @@ async function completeInvoice({ client, products, id, paymentMethod = 'bank', a
     }
 
     showToast('Đã chuyển đơn sang hoàn thành', 'success');
+    resetInvoicePaging();
     await renderInvoiceList({ client, products }).catch(() => {});
   } catch (err) {
     console.error(err);

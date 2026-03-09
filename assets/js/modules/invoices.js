@@ -140,7 +140,7 @@ function renderInvoiceRow({ row, client, products }) {
     : '';
 
   const canEdit = status === 1;
-  const canMarkPaid = paymentStatus == 'paid';
+  const canMarkPaid = status === 1 && paymentStatus !== 'paid';
   const canComplete = status === 1;
   const canCancel = status === 1;
   const canAddNote = status === 2;
@@ -170,7 +170,7 @@ function renderInvoiceRow({ row, client, products }) {
   
       <div class="invoice-actions">
         ${canEdit ? `<button class="btn small-edit">Sửa</button>` : ''}
-        ${canMarkPaid ? `<button class="btn small-pay">Đã thanh toán</button>` : ''}
+        ${canMarkPaid ? `<button class="btn small-pay">Thanh toán</button>` : ''}
         ${canComplete ? `<button class="btn small-complete">Hoàn thành</button>` : ''}
         ${canAddNote ? `<button class="btn small-note">Ghi chú</button>` : ''}
         ${canCancel ? `<button class="btn small-cancel">Huỷ</button>` : ''}

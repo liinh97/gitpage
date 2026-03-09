@@ -127,3 +127,123 @@ export function closeInvoiceModal() {
   hideQrError();
 }
 
+let toastRoot = null;
+let toastStyleInjected = false;
+
+function ensureToastRoot() {
+  if (toastRoot) return toastRoot;
+
+  toastRoot = document.getElementById('appToastRoot');
+  if (toastRoot) return toastRoot;
+
+  toastRoot = document.createElement('div');
+  toastRoot.id = 'appToastRoot';
+  toastRoot.className = 'app-toast-root';
+  document.body.appendChild(toastRoot);
+
+  return toastRoot;
+}
+
+function ensureToastStyles() {
+  if (toastStyleInjected) return;
+  toastStyleInjected = true;
+
+  const style = document.createElement('style');
+  style.textContent = `
+    .app-toast-root {
+      position: fixed;
+      top: 16px;
+      right: 16px;
+      z-index: 99999;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      pointer-events: none;
+      max-width: min(360px, calc(100vw - 24px));
+    }
+
+    .app-toast {
+      pointer-events: auto;
+      min-width: 220px;
+      max-width: 360px;
+      padding: 12px 14px;
+      border-radius: 12px;
+      color: #fff;
+      font-size: 14px;
+      line-height: 1.45;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.18);
+      opacity: 0;
+      transform: translateY(-8px);
+      animation: toast-in 0.2s ease forwards;
+    }
+
+    .app-toast.success {
+      background: #16a34a;
+    }
+
+    .app-toast.error {
+      background: #dc2626;
+    }
+
+    .app-toast.info {
+      background: #2563eb;
+    }
+
+    .app-toast.hide {
+      animation: toast-out 0.25s ease forwards;
+    }
+
+    @keyframes toast-in {
+      from {
+        opacity: 0;
+        transform: translateY(-8px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @keyframes toast-out {
+      from {
+        opacity: 1;
+        transform: translateY(0);
+      }
+      to {
+        opacity: 0;
+        transform: translateY(-8px);
+      }
+    }
+  `;
+  document.head.appendChild(style);
+}
+
+export function showToast(message, type = 'success', duration = 2200) {
+  ensureToastStyles();
+  const root = ensureToastRoot();
+
+  const toast = document.createElement('div');
+  toast.className = `app-toast ${type}`;
+  toast.textContent = message;
+
+  root.appendChild(toast);
+
+  const hideTimer = window.setTimeout(() => {
+    toast.classList.add('hide');
+
+    window.setTimeout(() => {
+      toast.remove();
+    }, 250);
+  }, duration);
+
+  toast.addEventListener('click', () => {
+    window.clearTimeout(hideTimer);
+    toast.classList.add('hide');
+
+    window.setTimeout(() => {
+      toast.remove();
+    }, 250);
+  });
+
+  return toast;
+}

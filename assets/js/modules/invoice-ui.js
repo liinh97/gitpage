@@ -247,3 +247,173 @@ export function showToast(message, type = 'success', duration = 2200) {
 
   return toast;
 }
+
+let pickerStyleInjected = false;
+let activeBackdrop = null;
+
+function ensurePickerStyles() {
+  if (pickerStyleInjected) return;
+  pickerStyleInjected = true;
+
+  const style = document.createElement('style');
+  style.textContent = `
+    .payment-picker-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.32);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 100000;
+      padding: 16px;
+    }
+
+    .payment-picker-modal {
+      width: 100%;
+      max-width: 360px;
+      background: #fff;
+      border-radius: 16px;
+      box-shadow: 0 20px 50px rgba(0,0,0,0.18);
+      padding: 18px;
+      animation: payment-picker-in 0.18s ease;
+    }
+
+    .payment-picker-title {
+      margin: 0 0 8px;
+      font-size: 18px;
+      font-weight: 700;
+      color: #111827;
+    }
+
+    .payment-picker-desc {
+      margin: 0 0 16px;
+      font-size: 14px;
+      color: #6b7280;
+      line-height: 1.45;
+    }
+
+    .payment-picker-actions {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .payment-picker-btn {
+      border: 0;
+      border-radius: 12px;
+      padding: 12px 14px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: transform 0.12s ease, opacity 0.12s ease;
+    }
+
+    .payment-picker-btn:hover {
+      transform: translateY(-1px);
+    }
+
+    .payment-picker-btn:active {
+      transform: translateY(0);
+    }
+
+    .payment-picker-btn.bank {
+      background: #2563eb;
+      color: #fff;
+    }
+
+    .payment-picker-btn.cash {
+      background: #16a34a;
+      color: #fff;
+    }
+
+    .payment-picker-cancel {
+      margin-top: 10px;
+      width: 100%;
+      border: 1px solid #e5e7eb;
+      background: #fff;
+      color: #374151;
+      border-radius: 12px;
+      padding: 11px 14px;
+      font-size: 14px;
+      cursor: pointer;
+    }
+
+    @keyframes payment-picker-in {
+      from {
+        opacity: 0;
+        transform: translateY(8px) scale(0.98);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+      }
+    }
+  `;
+  document.head.appendChild(style);
+}
+
+function closePicker(backdrop) {
+  if (!backdrop) return;
+  backdrop.remove();
+  if (activeBackdrop === backdrop) activeBackdrop = null;
+}
+
+export function pickPaymentMethod() {
+  ensurePickerStyles();
+
+  if (activeBackdrop) {
+    activeBackdrop.remove();
+    activeBackdrop = null;
+  }
+
+  return new Promise((resolve) => {
+    const backdrop = document.createElement('div');
+    backdrop.className = 'payment-picker-backdrop';
+
+    const modal = document.createElement('div');
+    modal.className = 'payment-picker-modal';
+    modal.innerHTML = `
+      <h3 class="payment-picker-title">Chọn hình thức thanh toán</h3>
+      <p class="payment-picker-desc">Chọn một cách thanh toán để tiếp tục.</p>
+
+      <div class="payment-picker-actions">
+        <button type="button" class="payment-picker-btn bank" data-method="bank">
+          Chuyển khoản
+        </button>
+        <button type="button" class="payment-picker-btn cash" data-method="cash">
+          Tiền mặt
+        </button>
+      </div>
+
+      <button type="button" class="payment-picker-cancel">
+        Đóng
+      </button>
+    `;
+
+    backdrop.appendChild(modal);
+    document.body.appendChild(backdrop);
+    activeBackdrop = backdrop;
+
+    const done = (value) => {
+      closePicker(backdrop);
+      resolve(value);
+    };
+
+    modal.querySelector('[data-method="bank"]')?.addEventListener('click', () => done('bank'));
+    modal.querySelector('[data-method="cash"]')?.addEventListener('click', () => done('cash'));
+    modal.querySelector('.payment-picker-cancel')?.addEventListener('click', () => done(null));
+
+    backdrop.addEventListener('click', (e) => {
+      if (e.target === backdrop) done(null);
+    });
+
+    const onKeyDown = (e) => {
+      if (e.key === 'Escape') {
+        document.removeEventListener('keydown', onKeyDown);
+        done(null);
+      }
+    };
+
+    document.addEventListener('keydown', onKeyDown, { once: true });
+  });
+}

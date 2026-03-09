@@ -247,8 +247,14 @@
 
       <!-- Summary -->
       <div style="margin-top:12px; background:#fff; border:1px solid #e6e9ef; border-radius:10px; padding:10px;">
-        <div id="statsSummary" class="muted">Chưa chạy thống kê.</div>
-        <div id="statsWarnings" class="error hidden" style="margin-top:6px;"></div>
+        <div style="margin: 10px 0 8px;">
+          <button class="btn" id="toggleStatsSummaryBtn">Hiển thị tổng quát</button>
+        </div>
+        
+        <div id="statsSummaryWrap" style="display:none;">
+          <div id="statsSummary"></div>
+          <div id="statsWarnings" class="hidden"></div>
+        </div>
       </div>
 
       <!-- Table -->

@@ -67,20 +67,30 @@ export function initStats({ client, products }) {
   const extraEveryNEl = document.getElementById('statsExtraEveryN');
   if (extraEveryNEl) extraEveryNEl.value = String(DEFAULT_EXTRA_EVERY_N);
 
-  // set ngay khi init
+  // mặc định ẩn summary + nút toggle
+  summaryWrap?.classList.add('hidden');
+  toggleSummaryBtn?.classList.add('hidden');
+  if (toggleSummaryBtn) toggleSummaryBtn.textContent = 'Hiển thị tổng quát';
+
   setTodayRange();
 
-  // OPEN: mỗi lần mở cũng reset về hôm nay
   btn.addEventListener('click', () => {
     setTodayRange();
     backdrop.classList.remove('hidden');
     backdrop.style.display = 'flex';
+
+    summaryWrap?.classList.add('hidden');
+    toggleSummaryBtn?.classList.add('hidden');
+    if (toggleSummaryBtn) toggleSummaryBtn.textContent = 'Hiển thị tổng quát';
   });
 
-  // CLOSE
   function close() {
     backdrop.style.display = 'none';
     backdrop.classList.add('hidden');
+
+    summaryWrap?.classList.add('hidden');
+    toggleSummaryBtn?.classList.add('hidden');
+    if (toggleSummaryBtn) toggleSummaryBtn.textContent = 'Hiển thị tổng quát';
   }
 
   closeBtn?.addEventListener('click', close);
@@ -93,24 +103,30 @@ export function initStats({ client, products }) {
     if (e.key === 'Escape' && !backdrop.classList.contains('hidden')) close();
   });
 
-  runBtn.addEventListener('click', async () => {
-    await runStats();
+  toggleSummaryBtn?.addEventListener('click', () => {
+    if (!summaryWrap) return;
+
+    const isHidden = summaryWrap.classList.contains('hidden');
+    summaryWrap.classList.toggle('hidden', !isHidden);
+    toggleSummaryBtn.textContent = isHidden ? 'Ẩn tổng quát' : 'Hiển thị tổng quát';
   });
 
-  if (summaryWrap) {
-    summaryWrap.style.display = 'none';
-  }
-  
-  if (toggleSummaryBtn) {
-    toggleSummaryBtn.textContent = 'Hiển thị tổng quát';
-    toggleSummaryBtn.addEventListener('click', () => {
-      const hidden = summaryWrap?.style.display === 'none';
-      if (!summaryWrap) return;
-  
-      summaryWrap.style.display = hidden ? 'block' : 'none';
-      toggleSummaryBtn.textContent = hidden ? 'Ẩn tổng quát' : 'Hiển thị tổng quát';
-    });
-  }
+  runBtn.addEventListener('click', async () => {
+    runBtn.disabled = true;
+    const oldText = runBtn.textContent;
+    runBtn.textContent = 'Đang thống kê...';
+
+    try {
+      await runStats();
+
+      toggleSummaryBtn?.classList.remove('hidden');
+      summaryWrap?.classList.add('hidden');
+      if (toggleSummaryBtn) toggleSummaryBtn.textContent = 'Hiển thị tổng quát';
+    } finally {
+      runBtn.disabled = false;
+      runBtn.textContent = oldText;
+    }
+  });
 }
 
 function setTodayRange() {
@@ -403,22 +419,63 @@ function renderStats(res) {
   }
 
   summaryEl.innerHTML = `
-    <div>Hoá đơn đã thanh toán: <strong>${res.invoiceCount}</strong></div>
-    <div>Hoá đơn đã huỷ: <strong>${res.canceledCount}</strong></div>
-
-    <div style="margin-top:6px;">Tổng tiền đã thanh toán: <strong>${formatVND(Math.round(res.totalPaidAll))} ₫</strong></div>
-    <div>Thanh toán chuyển khoản: <strong>${formatVND(Math.round(res.totalPaidBank))} ₫</strong></div>
-    <div>Thanh toán tiền mặt: <strong>${formatVND(Math.round(res.totalPaidCash))} ₫</strong></div>
-
-    <div style="margin-top:6px;">Tiền món sau giảm (tất cả món): <strong>${formatVND(Math.round(res.totalRevenueAllItems))} ₫</strong></div>
-    <div>Doanh thu tính lãi: <strong>${formatVND(Math.round(res.totalRevenueIncluded))} ₫</strong></div>
-    <div>Tổng lãi: <strong>${formatVND(Math.round(res.totalProfitIncluded))} ₫</strong>
-      <span class="muted"> (biên lãi ~<strong>${(res.margin * 100).toFixed(1)}%</strong>)</span>
+    <div class="stats-card">
+      <div class="stats-card-label">Hoá đơn đã thanh toán</div>
+      <div class="stats-card-value">${res.invoiceCount}</div>
     </div>
-
-    <div class="muted" style="margin-top:6px;">Tiền ship: <strong>${formatVND(Math.round(res.totalShip))} ₫</strong></div>
-    <div class="muted">Giảm giá: <strong>${formatVND(Math.round(res.totalDiscount))} ₫</strong></div>
-    <div class="muted">Overhead/đơn (base + phát sinh kỳ vọng): ~<strong>${formatVND(Math.round(res.expectedExtraPerInvoice + parseRaw(document.getElementById('statsBaseCost')?.dataset?.raw || '0')))} ₫</strong></div>
+  
+    <div class="stats-card">
+      <div class="stats-card-label">Hoá đơn đã huỷ</div>
+      <div class="stats-card-value">${res.canceledCount}</div>
+    </div>
+  
+    <div class="stats-card highlight">
+      <div class="stats-card-label">Tổng tiền đã thanh toán</div>
+      <div class="stats-card-value">${formatVND(Math.round(res.totalPaidAll))} ₫</div>
+    </div>
+  
+    <div class="stats-card">
+      <div class="stats-card-label">Chuyển khoản</div>
+      <div class="stats-card-value">${formatVND(Math.round(res.totalPaidBank))} ₫</div>
+    </div>
+  
+    <div class="stats-card">
+      <div class="stats-card-label">Tiền mặt</div>
+      <div class="stats-card-value">${formatVND(Math.round(res.totalPaidCash))} ₫</div>
+    </div>
+  
+    <div class="stats-card">
+      <div class="stats-card-label">Tiền món sau giảm</div>
+      <div class="stats-card-value">${formatVND(Math.round(res.totalRevenueAllItems))} ₫</div>
+    </div>
+  
+    <div class="stats-card">
+      <div class="stats-card-label">Doanh thu tính lãi</div>
+      <div class="stats-card-value">${formatVND(Math.round(res.totalRevenueIncluded))} ₫</div>
+    </div>
+  
+    <div class="stats-card profit">
+      <div class="stats-card-label">Tổng lãi</div>
+      <div class="stats-card-value">${formatVND(Math.round(res.totalProfitIncluded))} ₫</div>
+      <div class="stats-card-sub">Biên lãi ~ ${(res.margin * 100).toFixed(1)}%</div>
+    </div>
+  
+    <div class="stats-card soft">
+      <div class="stats-card-label">Tiền ship</div>
+      <div class="stats-card-value">${formatVND(Math.round(res.totalShip))} ₫</div>
+    </div>
+  
+    <div class="stats-card soft">
+      <div class="stats-card-label">Giảm giá</div>
+      <div class="stats-card-value">${formatVND(Math.round(res.totalDiscount))} ₫</div>
+    </div>
+  
+    <div class="stats-card soft">
+      <div class="stats-card-label">Overhead / đơn</div>
+      <div class="stats-card-value">${formatVND(Math.round(
+        res.expectedExtraPerInvoice + parseRaw(document.getElementById('statsBaseCost')?.dataset?.raw || '0')
+      ))} ₫</div>
+    </div>
   `;
 
   const missing = (res.missingCostItems || []).filter(Boolean);

@@ -132,6 +132,7 @@ function renderInvoiceRow({ row, client, products }) {
 
   const paymentStatus = normalizePaymentStatus(d.paymentStatus);
   const paymentMethod = normalizePaymentMethod(d.paymentMethod);
+  const itemsSummary = buildInvoiceItemsSummary(d.items);
 
   const paymentStatusText = PAYMENT_STATUS_MAP[paymentStatus];
   const paymentMethodText = paymentStatus === 'paid'
@@ -152,7 +153,13 @@ function renderInvoiceRow({ row, client, products }) {
       <div class="name">${escapeHtml(name)}</div>
       <div class="price-badge">${escapeHtml(total)}</div>
     </div>
-
+  
+    ${itemsSummary ? `
+      <div class="invoice-items-summary muted">
+        ${escapeHtml(itemsSummary)}
+      </div>
+    ` : ''}
+  
     <div class="invoice-footer">
       <div class="invoice-meta">
         <span class="muted">${escapeHtml(time)}</span>
@@ -160,7 +167,7 @@ function renderInvoiceRow({ row, client, products }) {
         <span class="invoice-payment-status muted">${escapeHtml(paymentStatusText)}</span>
         ${paymentMethodText ? `<span class="invoice-payment-method muted">${escapeHtml(paymentMethodText)}</span>` : ''}
       </div>
-
+  
       <div class="invoice-actions">
         ${canEdit ? `<button class="btn small-edit">Sửa</button>` : ''}
         ${canMarkPaid ? `<button class="btn small-pay">Đã thanh toán</button>` : ''}
@@ -169,7 +176,7 @@ function renderInvoiceRow({ row, client, products }) {
         ${canCancel ? `<button class="btn small-cancel">Huỷ</button>` : ''}
       </div>
     </div>
-
+  
     ${d.note ? `<div class="invoice-note muted">📝 ${escapeHtml(d.note)}</div>` : ''}
   `;
 
@@ -248,6 +255,22 @@ function normalizePaymentStatus(value) {
 
 function normalizePaymentMethod(value) {
   return value === 'cash' ? 'cash' : 'bank';
+}
+
+function buildInvoiceItemsSummary(items = []) {
+  if (!Array.isArray(items) || items.length === 0) return '';
+
+  return items
+    .map(item => {
+      const name = (item?.name || '').trim();
+      const qty = Number(item?.qty || 0);
+
+      if (!name) return '';
+      if (qty > 0) return `${name} x${qty}`;
+      return name;
+    })
+    .filter(Boolean)
+    .join(' - ');
 }
 
 async function loadInvoiceToItems({ client, products, invoiceId }) {

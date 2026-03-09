@@ -174,45 +174,39 @@ function renderInvoiceRow({ row, client, products }) {
   // PAY ONLY
   el.querySelector('.small-pay')?.addEventListener('click', async (e) => {
     e.stopPropagation();
-
+  
     const method = askPaymentMethod();
     if (!method) return;
-
-    if (confirm(`Xác nhận đánh dấu "Đã thanh toán" bằng ${PAYMENT_METHOD_MAP[method]}?`)) {
-      await markInvoicePaid({ client, products, id, paymentMethod: method });
-    }
+  
+    await markInvoicePaid({ client, products, id, paymentMethod: method });
   });
 
   // COMPLETE (bao gồm thanh toán nếu chưa thanh toán)
   el.querySelector('.small-complete')?.addEventListener('click', async (e) => {
     e.stopPropagation();
-
+  
     const latestPaymentStatus = normalizePaymentStatus(d.paymentStatus);
-
+  
     if (latestPaymentStatus !== 'paid') {
       const method = askPaymentMethod();
       if (!method) return;
-
-      if (confirm(`Đơn này chưa thanh toán. Xác nhận hoàn thành và thanh toán bằng ${PAYMENT_METHOD_MAP[method]}?`)) {
-        await completeInvoice({
-          client,
-          products,
-          id,
-          paymentMethod: method,
-          autoPay: true,
-        });
-      }
-      return;
-    }
-
-    if (confirm('Xác nhận chuyển đơn sang hoàn thành?')) {
+  
       await completeInvoice({
         client,
         products,
         id,
-        autoPay: false,
+        paymentMethod: method,
+        autoPay: true,
       });
+      return;
     }
+  
+    await completeInvoice({
+      client,
+      products,
+      id,
+      autoPay: false,
+    });
   });
 
   // NOTE

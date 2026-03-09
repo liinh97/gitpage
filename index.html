@@ -213,44 +213,44 @@
       </div>
 
       <!-- Filters -->
-      <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top:10px; align-items:end;">
+      <div class="stats-filters-row">
         <label class="small-muted">
           Từ ngày
           <input type="date" id="statsFromDate" />
         </label>
-
+      
         <label class="small-muted">
           Đến ngày
           <input type="date" id="statsToDate" />
         </label>
-
+      
         <label class="small-muted">
           Base cost / đơn
           <input type="text" id="statsBaseCost" value="2000" data-raw="2000" inputmode="numeric"
                  style="padding:6px; border-radius:6px; border:1px solid #ddd; min-width:120px;" />
         </label>
-
+      
         <label class="small-muted">
           Phát sinh: 1 lần / N đơn
           <input type="number" id="statsExtraEveryN" value="7" min="1"
                  style="padding:6px; border-radius:6px; border:1px solid #ddd; width:90px;" />
         </label>
-
+      
         <label class="small-muted">
           Chi phí phát sinh (mỗi lần)
           <input type="text" id="statsExtraAvgCost" value="500" data-raw="500" inputmode="numeric"
                  style="padding:6px; border-radius:6px; border:1px solid #ddd; min-width:120px;" />
         </label>
-
-        <div class="stats-toolbar">
-          <button class="btn" id="runStatsBtn">Chạy thống kê</button>
-          <button class="btn hidden" id="toggleStatsSummaryBtn" type="button">Hiển thị tổng quát</button>
-        </div>
-        
-        <div id="statsSummaryWrap" class="stats-summary-wrap hidden">
-          <div id="statsSummary" class="stats-summary-grid"></div>
-          <div id="statsWarnings" class="stats-warning-box hidden"></div>
-        </div>
+      </div>
+      
+      <div class="stats-toolbar">
+        <button class="btn" id="runStatsBtn" type="button">Chạy thống kê</button>
+        <button class="btn hidden" id="toggleStatsSummaryBtn" type="button">Hiển thị tổng quát</button>
+      </div>
+      
+      <div id="statsSummaryWrap" class="stats-summary-wrap hidden">
+        <div id="statsSummary" class="stats-summary-grid"></div>
+        <div id="statsWarnings" class="stats-warning-box hidden"></div>
       </div>
 
       <!-- Table -->

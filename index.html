@@ -242,18 +242,14 @@
                  style="padding:6px; border-radius:6px; border:1px solid #ddd; min-width:120px;" />
         </label>
 
-        <button class="btn" id="runStatsBtn">Chạy thống kê</button>
-      </div>
-
-      <!-- Summary -->
-      <div style="margin-top:12px; background:#fff; border:1px solid #e6e9ef; border-radius:10px; padding:10px;">
-        <div style="margin: 10px 0 8px;">
-          <button class="btn" id="toggleStatsSummaryBtn">Hiển thị tổng quát</button>
+        <div class="stats-toolbar">
+          <button class="btn" id="runStatsBtn">Chạy thống kê</button>
+          <button class="btn hidden" id="toggleStatsSummaryBtn" type="button">Hiển thị tổng quát</button>
         </div>
         
-        <div id="statsSummaryWrap" style="display:none;">
-          <div id="statsSummary"></div>
-          <div id="statsWarnings" class="hidden"></div>
+        <div id="statsSummaryWrap" class="stats-summary-wrap hidden">
+          <div id="statsSummary" class="stats-summary-grid"></div>
+          <div id="statsWarnings" class="stats-warning-box hidden"></div>
         </div>
       </div>
 

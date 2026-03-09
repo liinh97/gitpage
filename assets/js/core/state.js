@@ -14,8 +14,9 @@ export const state = {
   },
 
   invoicePaging: {
-    cursorStack: [],
     currentCursor: null,
+    nextCursor: null,
+    cursorStack: [],
   },
 };
 

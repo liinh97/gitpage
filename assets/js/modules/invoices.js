@@ -1,6 +1,6 @@
 import { state } from '../core/state.js';
 import { formatVND, parseRaw, escapeHtml, getTodayYYYYMMDD } from '../core/utils.js';
-import { openInvoiceModalFromInvoiceData } from './invoice-ui.js';
+import { showToast, openInvoiceModalFromInvoiceData } from './invoice-ui.js';
 
 const INVOICE_STATUS_MAP = {
   1: { text: 'Đơn mới', class: 'st-new' },
@@ -595,11 +595,11 @@ async function markInvoicePaid({ client, products, id, paymentMethod }) {
       throw new Error('Thiếu updateInvoice');
     }
 
-    alert('Đã cập nhật trạng thái thanh toán.');
+    showToast(`Đã cập nhật thanh toán: ${PAYMENT_METHOD_MAP[paymentMethod || 'bank']}`, 'success');
     await renderInvoiceList({ client, products }).catch(() => {});
   } catch (err) {
     console.error(err);
-    alert('Cập nhật thanh toán thất bại: ' + (err.message || err));
+    showToast('Cập nhật thanh toán thất bại: ' + (err.message || err), 'error', 3200);
   }
 }
 
@@ -643,11 +643,11 @@ async function completeInvoice({ client, products, id, paymentMethod = 'bank', a
       throw new Error('Thiếu updateInvoice/updateInvoiceStatus');
     }
 
-    alert('Đã chuyển đơn sang hoàn thành.');
+    showToast('Đã chuyển đơn sang hoàn thành', 'success');
     await renderInvoiceList({ client, products }).catch(() => {});
   } catch (err) {
     console.error(err);
-    alert('Hoàn thành đơn thất bại: ' + (err.message || err));
+    showToast('Hoàn thành đơn thất bại: ' + (err.message || err), 'error', 3200);
   }
 }
 

@@ -15,10 +15,10 @@ const DEFAULT_BASE_COST = 2000;
 // unit cost / 1 đơn vị món
 // cost = 0 => bán hộ
 const ITEM_COST_OVERRIDES = {
-  "Nem TCC": 3050,
-  "Nem TCC xù": 3175,
-  "Nem TCC vỏ giòn": 3350,
-  "Nem TCC phomai": 7116,
+  "Nem TCC": 2750,
+  "Nem TCC xù": 2875,
+  "Nem TCC vỏ giòn": 3050,
+  "Nem TCC phomai": 6816,
   "Bánh rán mặn": 3630,
   "Bánh rán phomai": 3414,
   "Bánh rán cốm dừa": 0,

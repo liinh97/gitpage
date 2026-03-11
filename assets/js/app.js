@@ -33,9 +33,13 @@ document.addEventListener('DOMContentLoaded', async () => {
   // data
   const RAW = [
     ["Nem TCC",6000],
-    ["Nem TCC xù", {Chín:7000, Sống:4200}],
-    ["Nem TCC vỏ giòn", {Chín:7000, Sống:5200}],
-    ["Nem TCC phomai", {Chín:13000, Sống:11000}],
+    ["Nem TCC xù",7000],
+    ["Nem TCC vỏ giòn",7000],
+    ["Nem TCC phomai",13000],
+    ["Sống Nem TCC",4000],
+    ["Sống Nem TCC xù",4200],
+    ["Sống Nem TCC vỏ giòn",5200],
+    ["Sống Nem TCC phomai",11000],
     ["Bánh rán mặn",9000],
     ["Bánh rán phomai",10000],,
     ["Bánh rán cốm dừa",10000],
@@ -117,6 +121,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
   }
 });
+
 
 
 

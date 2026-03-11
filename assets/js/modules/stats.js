@@ -16,7 +16,7 @@ const DEFAULT_BASE_COST = 2000;
 // cost = 0 => bán hộ
 const ITEM_COST_OVERRIDES = {
   "Nem TCC": 2750,
-  "Sống Nem TCC": 2700,
+  "Sống Nem TCC": 2750,
   "Nem TCC xù": 2875,
   "Sống Nem TCC xù": 2875,
   "Nem TCC vỏ giòn": 3050,

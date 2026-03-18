@@ -658,3 +658,41 @@ body.mode-invoices #invoiceList .item{
   line-height: 1.5;
 }
 
+.issued-items-summary {
+  margin-bottom: 16px;
+}
+
+.issued-summary-card {
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 12px;
+}
+
+.issued-summary-title {
+  font-weight: 700;
+  margin-bottom: 10px;
+}
+
+.issued-summary-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.issued-summary-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: #f9fafb;
+}
+
+.issued-summary-name {
+  font-weight: 500;
+}
+
+.issued-summary-qty {
+  font-weight: 700;
+}

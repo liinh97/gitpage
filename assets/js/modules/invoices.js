@@ -4,8 +4,9 @@ import { showToast, openInvoiceModalFromInvoiceData, pickPaymentMethod } from '.
 
 const INVOICE_STATUS_MAP = {
   1: { text: 'Đơn mới', class: 'st-new' },
-  2: { text: 'Đã hoàn thành', class: 'st-done' },
-  3: { text: 'Đã huỷ', class: 'st-cancel' },
+  2: { text: 'Đã ra đơn', class: 'st-processing' },
+  3: { text: 'Đã hoàn thành', class: 'st-done' },
+  4: { text: 'Đã huỷ', class: 'st-cancel' },
 };
 
 const PAYMENT_STATUS_MAP = {
@@ -84,6 +85,9 @@ export async function renderInvoiceList({ client = _client, products = _products
     listRoot.innerHTML = '';
 
     const rows = Array.isArray(res?.rows) ? res.rows : [];
+    
+    renderIssuedItemsSummary(rows);
+    
     state.invoicePaging.nextCursor = res?.lastDoc || null;
 
     if (!rows.length) {
@@ -139,11 +143,12 @@ function renderInvoiceRow({ row, client, products }) {
     ? PAYMENT_METHOD_MAP[paymentMethod]
     : '';
 
-  const canEdit = status === 1;
-  const canMarkPaid = status === 1 && paymentStatus !== 'paid';
-  const canComplete = status === 1;
-  const canCancel = status === 1;
-  const canAddNote = status === 2;
+  const canEdit = status === 1 || status === 2;
+  const canIssue = status === 1 || status === 2; // cho phép ra đơn lại
+  const canMarkPaid = status === 2 && paymentStatus !== 'paid';
+  const canComplete = status === 2 && paymentStatus === 'paid';
+  const canCancel = status === 1 || status === 2;
+  const canAddNote = status === 2 || status === 3;
 
   const el = document.createElement('div');
   el.className = 'item invoice-item';
@@ -170,6 +175,7 @@ function renderInvoiceRow({ row, client, products }) {
   
       <div class="invoice-actions">
         ${canEdit ? `<button class="btn small-edit">Sửa</button>` : ''}
+        ${canIssue ? `<button class="btn small-issue">${status === 2 ? 'Ra đơn lại' : 'Ra đơn'}</button>` : ''}
         ${canMarkPaid ? `<button class="btn small-pay">Thanh toán</button>` : ''}
         ${canComplete ? `<button class="btn small-complete">Hoàn thành</button>` : ''}
         ${canAddNote ? `<button class="btn small-note">Ghi chú</button>` : ''}
@@ -206,29 +212,7 @@ function renderInvoiceRow({ row, client, products }) {
   // COMPLETE (bao gồm thanh toán nếu chưa thanh toán)
   el.querySelector('.small-complete')?.addEventListener('click', async (e) => {
     e.stopPropagation();
-  
-    const latestPaymentStatus = normalizePaymentStatus(d.paymentStatus);
-  
-    if (latestPaymentStatus !== 'paid') {
-      const method = await pickPaymentMethod();
-      if (!method) return;
-  
-      await completeInvoice({
-        client,
-        products,
-        id,
-        paymentMethod: method,
-        autoPay: true,
-      });
-      return;
-    }
-  
-    await completeInvoice({
-      client,
-      products,
-      id,
-      autoPay: false,
-    });
+    await completeInvoice({ client, products, id });
   });
 
   // NOTE
@@ -242,7 +226,20 @@ function renderInvoiceRow({ row, client, products }) {
   el.querySelector('.small-cancel')?.addEventListener('click', async (e) => {
     e.stopPropagation();
     if (confirm('Xác nhận huỷ đơn?')) {
-      await changeInvoiceStatus({ client, products, id, newStatus: 3 });
+      await changeInvoiceStatus({ client, products, id, newStatus: 4 });
+    }
+  });
+
+  // ISSUE
+  el.querySelector('.small-issue')?.addEventListener('click', async (e) => {
+    e.stopPropagation();
+  
+    const message = status === 2
+      ? 'Xác nhận ra đơn lại? Danh sách món cần làm sẽ được cập nhật.'
+      : 'Xác nhận ra đơn này?';
+  
+    if (confirm(message)) {
+      await issueInvoice({ client, products, id, reissue: status === 2 });
     }
   });
 
@@ -356,7 +353,8 @@ function applyInvoiceMode({ status, mode }) {
     return;
   }
 
-  if (status === 1) {
+  // Đơn mới và đã ra đơn vẫn cho sửa
+  if (status === 1 || status === 2) {
     orderInput.disabled = false;
     noteInput.disabled = false;
     saveBtn.style.display = '';
@@ -364,11 +362,19 @@ function applyInvoiceMode({ status, mode }) {
     return;
   }
 
-  // status 2 hoàn thành, status 3 huỷ => chỉ xem
+  // Hoàn thành chỉ cho sửa ghi chú
+  if (mode === 'note' && status === 3) {
+    orderInput.disabled = true;
+    noteInput.disabled = false;
+    saveBtn.style.display = '';
+    saveBtn.textContent = 'Lưu ghi chú';
+    return;
+  }
+
   orderInput.disabled = true;
   noteInput.disabled = true;
   saveBtn.style.display = 'none';
-}
+}  
 
 async function changeInvoiceStatus({ client, products, id, newStatus }) {
   try {
@@ -437,12 +443,12 @@ async function saveInvoiceFlow({ client, products }) {
 
       const st = Number(existing.data.status);
 
-      if (st === 1) {
+      if (st === 1 || st === 2) {
         if (items.length === 0) {
           alert('Chưa có món nào để lưu.');
           return;
         }
-
+      
         await client.updateInvoice(state.currentInvoiceId, {
           orderName,
           items,
@@ -451,9 +457,12 @@ async function saveInvoiceFlow({ client, products }) {
           total,
           note,
         });
-
+      } else if (st === 3) {
+        await client.updateInvoice(state.currentInvoiceId, {
+          note,
+        });
       } else {
-        alert('Hoá đơn đã hoàn thành hoặc đã huỷ, không thể sửa.');
+        alert('Hoá đơn đã huỷ, không thể sửa.');
         return;
       }
 
@@ -600,6 +609,22 @@ async function markInvoicePaid({ client, products, id, paymentMethod }) {
   try {
     await client.signInAnonymouslyIfNeeded?.();
 
+    if (typeof client.getInvoice !== 'function') {
+      throw new Error('Thiếu getInvoice');
+    }
+
+    const existing = await client.getInvoice(id);
+    if (!existing || !existing.data) {
+      throw new Error('Hoá đơn không tồn tại');
+    }
+
+    const invoice = existing.data || {};
+    const currentStatus = Number(invoice.status || 1);
+
+    if (currentStatus !== 2) {
+      throw new Error('Chỉ đơn đã ra đơn mới được thanh toán');
+    }
+
     if (typeof client.updateInvoice === 'function') {
       await client.updateInvoice(id, {
         paymentStatus: 'paid',
@@ -618,7 +643,7 @@ async function markInvoicePaid({ client, products, id, paymentMethod }) {
   }
 }
 
-async function completeInvoice({ client, products, id, paymentMethod = 'bank', autoPay = false }) {
+async function issueInvoice({ client, products, id, reissue = false }) {
   try {
     await client.signInAnonymouslyIfNeeded?.();
 
@@ -634,24 +659,67 @@ async function completeInvoice({ client, products, id, paymentMethod = 'bank', a
     const invoice = existing.data || {};
     const currentStatus = Number(invoice.status || 1);
 
-    if (currentStatus !== 1) {
-      throw new Error('Chỉ đơn mới mới có thể hoàn thành');
+    if (currentStatus !== 1 && currentStatus !== 2) {
+      throw new Error('Chỉ đơn mới hoặc đơn đã ra đơn mới có thể thao tác ra đơn');
     }
 
-    const payload = { status: 2 };
+    const payload = {
+      status: 2,
+      issuedAt: new Date().toISOString(),
+    };
 
-    if (autoPay) {
-      payload.paymentStatus = 'paid';
-      payload.paymentMethod = paymentMethod || 'bank';
-    } else if (normalizePaymentStatus(invoice.paymentStatus) === 'paid') {
-      payload.paymentStatus = 'paid';
-      payload.paymentMethod = normalizePaymentMethod(invoice.paymentMethod);
-    }
+    const issuedCount = Number(invoice.issuedCount || 0);
+    payload.issuedCount = currentStatus === 2 ? issuedCount + 1 : Math.max(1, issuedCount || 1);
 
     if (typeof client.updateInvoice === 'function') {
       await client.updateInvoice(id, payload);
     } else if (typeof client.updateInvoiceStatus === 'function') {
       await client.updateInvoiceStatus(id, 2);
+    } else {
+      throw new Error('Thiếu updateInvoice/updateInvoiceStatus');
+    }
+
+    showToast(reissue ? 'Đã ra đơn lại thành công' : 'Đã chuyển đơn sang trạng thái ra đơn', 'success');
+
+    resetInvoicePaging();
+    await renderInvoiceList({ client, products }).catch(() => {});
+  } catch (err) {
+    console.error(err);
+    showToast('Ra đơn thất bại: ' + (err.message || err), 'error', 3200);
+  }
+}
+
+async function completeInvoice({ client, products, id }) {
+  try {
+    await client.signInAnonymouslyIfNeeded?.();
+
+    if (typeof client.getInvoice !== 'function') {
+      throw new Error('Thiếu getInvoice');
+    }
+
+    const existing = await client.getInvoice(id);
+    if (!existing || !existing.data) {
+      throw new Error('Hoá đơn không tồn tại');
+    }
+
+    const invoice = existing.data || {};
+    const currentStatus = Number(invoice.status || 1);
+    const paymentStatus = normalizePaymentStatus(invoice.paymentStatus);
+
+    if (currentStatus !== 2) {
+      throw new Error('Chỉ đơn đã ra đơn mới có thể hoàn thành');
+    }
+
+    if (paymentStatus !== 'paid') {
+      throw new Error('Đơn chưa thanh toán, không thể hoàn thành');
+    }
+
+    if (typeof client.updateInvoice === 'function') {
+      await client.updateInvoice(id, {
+        status: 3,
+      });
+    } else if (typeof client.updateInvoiceStatus === 'function') {
+      await client.updateInvoiceStatus(id, 3);
     } else {
       throw new Error('Thiếu updateInvoice/updateInvoiceStatus');
     }
@@ -663,4 +731,65 @@ async function completeInvoice({ client, products, id, paymentMethod = 'bank', a
     console.error(err);
     showToast('Hoàn thành đơn thất bại: ' + (err.message || err), 'error', 3200);
   }
+}
+
+function aggregateIssuedItems(rows = []) {
+  const itemMap = {};
+
+  rows.forEach(row => {
+    const d = row.data || {};
+    const status = Number(d.status || 1);
+
+    if (status !== 2) return;
+
+    const items = Array.isArray(d.items) ? d.items : [];
+    items.forEach(item => {
+      const name = (item?.name || '').trim();
+      const qty = Number(item?.qty || 0);
+
+      if (!name || qty <= 0) return;
+
+      if (!itemMap[name]) {
+        itemMap[name] = {
+          name,
+          qty: 0,
+        };
+      }
+
+      itemMap[name].qty += qty;
+    });
+  });
+
+  return Object.values(itemMap).sort((a, b) => b.qty - a.qty);
+}
+
+function renderIssuedItemsSummary(rows = []) {
+  const root = document.getElementById('issuedItemsSummary');
+  if (!root) return;
+
+  const aggregated = aggregateIssuedItems(rows);
+
+  if (!aggregated.length) {
+    root.innerHTML = `
+      <div class="issued-summary-card">
+        <div class="issued-summary-title">Các món cần làm tiếp theo</div>
+        <div class="muted">Chưa có đơn nào đã ra đơn.</div>
+      </div>
+    `;
+    return;
+  }
+
+  root.innerHTML = `
+    <div class="issued-summary-card">
+      <div class="issued-summary-title">Các món cần làm tiếp theo</div>
+      <div class="issued-summary-list">
+        ${aggregated.map(item => `
+          <div class="issued-summary-item">
+            <span class="issued-summary-name">${escapeHtml(item.name)}</span>
+            <span class="issued-summary-qty">x${item.qty}</span>
+          </div>
+        `).join('')}
+      </div>
+    </div>
+  `;
 }

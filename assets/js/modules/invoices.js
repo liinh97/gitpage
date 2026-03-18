@@ -4,9 +4,8 @@ import { showToast, openInvoiceModalFromInvoiceData, pickPaymentMethod } from '.
 
 const INVOICE_STATUS_MAP = {
   1: { text: 'Đơn mới', class: 'st-new' },
-  2: { text: 'Đã ra đơn', class: 'st-issued' },
-  3: { text: 'Đã hoàn thành', class: 'st-done' },
-  4: { text: 'Đã huỷ', class: 'st-cancel' },
+  2: { text: 'Đã hoàn thành', class: 'st-done' },
+  3: { text: 'Đã huỷ', class: 'st-cancel' },
 };
 
 const PAYMENT_STATUS_MAP = {
@@ -131,8 +130,6 @@ function renderInvoiceRow({ row, client, products }) {
   const status = Number(d.status || 1);
   const statusInfo = INVOICE_STATUS_MAP[status] || { text: 'Không rõ', class: 'st-unknown' };
 
-  const issuedItemsSummary = buildInvoiceItemsSummary(d.issuedItems);
-
   const paymentStatus = normalizePaymentStatus(d.paymentStatus);
   const paymentMethod = normalizePaymentMethod(d.paymentMethod);
   const itemsSummary = buildInvoiceItemsSummary(d.items);
@@ -143,11 +140,10 @@ function renderInvoiceRow({ row, client, products }) {
     : '';
 
   const canEdit = status === 1;
-  const canIssue = status === 1;
-  const canMarkPaid = (status === 1 || status === 2) && paymentStatus !== 'paid';
-  const canComplete = status === 2;
+  const canMarkPaid = status === 1 && paymentStatus !== 'paid';
+  const canComplete = status === 1;
   const canCancel = status === 1;
-  const canAddNote = status === 2 || status === 3;
+  const canAddNote = status === 2;
 
   const el = document.createElement('div');
   el.className = 'item invoice-item';
@@ -163,12 +159,6 @@ function renderInvoiceRow({ row, client, products }) {
         ${escapeHtml(itemsSummary)}
       </div>
     ` : ''}
-
-    ${issuedItemsSummary ? `
-      <div class="invoice-issued-summary muted">
-        Đã ra: ${escapeHtml(issuedItemsSummary)}
-      </div>
-    ` : ''}
   
     <div class="invoice-footer">
       <div class="invoice-meta">
@@ -180,7 +170,6 @@ function renderInvoiceRow({ row, client, products }) {
   
       <div class="invoice-actions">
         ${canEdit ? `<button class="btn small-edit">Sửa</button>` : ''}
-        ${canIssue ? `<button class="btn small-issue">Đã ra đơn</button>` : ''}
         ${canMarkPaid ? `<button class="btn small-pay">Thanh toán</button>` : ''}
         ${canComplete ? `<button class="btn small-complete">Hoàn thành</button>` : ''}
         ${canAddNote ? `<button class="btn small-note">Ghi chú</button>` : ''}
@@ -253,13 +242,8 @@ function renderInvoiceRow({ row, client, products }) {
   el.querySelector('.small-cancel')?.addEventListener('click', async (e) => {
     e.stopPropagation();
     if (confirm('Xác nhận huỷ đơn?')) {
-      await changeInvoiceStatus({ client, products, id, newStatus: 4 });
+      await changeInvoiceStatus({ client, products, id, newStatus: 3 });
     }
-  });
-
-  el.querySelector('.small-issue')?.addEventListener('click', async (e) => {
-    e.stopPropagation();
-    await openIssueInvoicePopup({ client, products, id });
   });
 
   return el;
@@ -379,11 +363,6 @@ function applyInvoiceMode({ status, mode }) {
     saveBtn.textContent = 'Lưu hoá đơn';
     return;
   }
-  
-  // status 2 đã ra đơn, status 3 hoàn thành, status 4 huỷ => chỉ xem
-  orderInput.disabled = true;
-  noteInput.disabled = true;
-  saveBtn.style.display = 'none';
 
   // status 2 hoàn thành, status 3 huỷ => chỉ xem
   orderInput.disabled = true;
@@ -474,7 +453,7 @@ async function saveInvoiceFlow({ client, products }) {
         });
 
       } else {
-        alert('Hoá đơn đã ra đơn, đã hoàn thành hoặc đã huỷ, không thể sửa.');
+        alert('Hoá đơn đã hoàn thành hoặc đã huỷ, không thể sửa.');
         return;
       }
 
@@ -655,11 +634,11 @@ async function completeInvoice({ client, products, id, paymentMethod = 'bank', a
     const invoice = existing.data || {};
     const currentStatus = Number(invoice.status || 1);
 
-    if (currentStatus !== 2) {
-      throw new Error('Chỉ đơn đã ra đơn mới có thể hoàn thành');
+    if (currentStatus !== 1) {
+      throw new Error('Chỉ đơn mới mới có thể hoàn thành');
     }
 
-    const payload = { status: 3 };
+    const payload = { status: 2 };
 
     if (autoPay) {
       payload.paymentStatus = 'paid';
@@ -683,209 +662,5 @@ async function completeInvoice({ client, products, id, paymentMethod = 'bank', a
   } catch (err) {
     console.error(err);
     showToast('Hoàn thành đơn thất bại: ' + (err.message || err), 'error', 3200);
-  }
-}
-
-async function openIssueInvoicePopup({ client, products, id }) {
-  try {
-    if (typeof client.getInvoice !== 'function') {
-      throw new Error('Thiếu getInvoice');
-    }
-
-    const res = await client.getInvoice(id);
-    if (!res || !res.data) {
-      throw new Error('Không tìm thấy hoá đơn');
-    }
-
-    const invoice = res.data || {};
-    const status = Number(invoice.status || 1);
-
-    if (status !== 1) {
-      showToast('Chỉ đơn mới mới có thể chuyển sang đã ra đơn', 'error');
-      return;
-    }
-
-    const items = Array.isArray(invoice.items) ? invoice.items : [];
-    if (!items.length) {
-      showToast('Đơn không có món để ra', 'error');
-      return;
-    }
-
-    const html = `
-      <div class="issue-popup-overlay" id="issuePopupOverlay">
-        <div class="issue-popup">
-          <div class="issue-popup-header">
-            <h3>Chọn món đã ra đơn</h3>
-          </div>
-
-          <div class="issue-popup-body">
-            <label class="issue-all-wrap">
-              <input type="checkbox" id="issueAllItems" checked />
-              <span>Ra hết toàn bộ món trong đơn</span>
-            </label>
-
-            <div class="issue-items-wrap" id="issueItemsWrap">
-              ${items.map((item, index) => `
-                <div class="issue-item-row">
-                  <label>
-                    <input
-                      type="checkbox"
-                      class="issue-item-check"
-                      data-index="${index}"
-                      checked
-                      disabled
-                    />
-                    <span>${escapeHtml(item.name || '')}</span>
-                  </label>
-
-                  <input
-                    type="number"
-                    min="1"
-                    max="${Number(item.qty || 1)}"
-                    value="${Number(item.qty || 1)}"
-                    class="issue-item-qty"
-                    data-index="${index}"
-                    disabled
-                  />
-
-                  <span class="muted">/ ${Number(item.qty || 1)}</span>
-                </div>
-              `).join('')}
-            </div>
-          </div>
-
-          <div class="issue-popup-footer">
-            <button class="btn" id="issuePopupCancelBtn">Huỷ</button>
-            <button class="btn primary" id="issuePopupConfirmBtn">Xác nhận đã ra đơn</button>
-          </div>
-        </div>
-      </div>
-    `;
-
-    document.body.insertAdjacentHTML('beforeend', html);
-
-    const overlay = document.getElementById('issuePopupOverlay');
-    const allItemsEl = document.getElementById('issueAllItems');
-    const cancelBtn = document.getElementById('issuePopupCancelBtn');
-    const confirmBtn = document.getElementById('issuePopupConfirmBtn');
-
-    const syncControls = () => {
-      const checked = !!allItemsEl?.checked;
-      overlay?.querySelectorAll('.issue-item-check, .issue-item-qty').forEach(el => {
-        el.disabled = checked;
-      });
-
-      if (checked) {
-        overlay?.querySelectorAll('.issue-item-check').forEach(el => {
-          el.checked = true;
-        });
-        overlay?.querySelectorAll('.issue-item-qty').forEach((el, idx) => {
-          el.value = Number(items[idx]?.qty || 1);
-        });
-      }
-    };
-
-    allItemsEl?.addEventListener('change', syncControls);
-    syncControls();
-
-    const closePopup = () => {
-      overlay?.remove();
-    };
-
-    cancelBtn?.addEventListener('click', closePopup);
-    overlay?.addEventListener('click', (e) => {
-      if (e.target === overlay) closePopup();
-    });
-
-    confirmBtn?.addEventListener('click', async () => {
-      const issueAll = !!allItemsEl?.checked;
-
-      let issuedItems = [];
-
-      if (issueAll) {
-        issuedItems = items.map(item => ({
-          name: item.name,
-          qty: Number(item.qty || 0),
-        })).filter(item => item.name && item.qty > 0);
-      } else {
-        const checks = [...overlay.querySelectorAll('.issue-item-check')];
-        const qtyInputs = [...overlay.querySelectorAll('.issue-item-qty')];
-
-        issuedItems = checks.map(check => {
-          const index = Number(check.dataset.index);
-          const source = items[index] || {};
-          const qtyInput = qtyInputs.find(q => Number(q.dataset.index) === index);
-          const maxQty = Number(source.qty || 0);
-          const qty = Math.min(Math.max(Number(qtyInput?.value || 0), 0), maxQty);
-
-          if (!check.checked || qty <= 0) return null;
-
-          return {
-            name: source.name,
-            qty,
-          };
-        }).filter(Boolean);
-      }
-
-      if (!issuedItems.length) {
-        showToast('Bạn chưa chọn món nào để ra đơn', 'error');
-        return;
-      }
-
-      await issueInvoice({
-        client,
-        products,
-        id,
-        issuedItems,
-      });
-
-      closePopup();
-    });
-  } catch (err) {
-    console.error(err);
-    showToast('Không mở được popup ra đơn: ' + (err.message || err), 'error');
-  }
-}
-
-async function issueInvoice({ client, products, id, issuedItems }) {
-  try {
-    await client.signInAnonymouslyIfNeeded?.();
-
-    if (typeof client.getInvoice !== 'function') {
-      throw new Error('Thiếu getInvoice');
-    }
-
-    const existing = await client.getInvoice(id);
-    if (!existing || !existing.data) {
-      throw new Error('Hoá đơn không tồn tại');
-    }
-
-    const invoice = existing.data || {};
-    const currentStatus = Number(invoice.status || 1);
-
-    if (currentStatus !== 1) {
-      throw new Error('Chỉ đơn mới mới có thể chuyển sang đã ra đơn');
-    }
-
-    if (!Array.isArray(issuedItems) || !issuedItems.length) {
-      throw new Error('Không có món nào được chọn');
-    }
-
-    if (typeof client.updateInvoice !== 'function') {
-      throw new Error('Thiếu updateInvoice');
-    }
-
-    await client.updateInvoice(id, {
-      status: 2,
-      issuedItems,
-      issuedAt: new Date().toISOString(),
-    });
-
-    showToast('Đã chuyển đơn sang trạng thái đã ra đơn', 'success');
-    resetInvoicePaging();
-    await renderInvoiceList({ client, products }).catch(() => {});
-  } catch (err) {
-    console.error(err);
-    showToast('Ra đơn thất bại: ' + (err.message || err), 'error', 3200);
   }
 }

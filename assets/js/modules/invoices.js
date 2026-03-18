@@ -59,14 +59,9 @@ export async function renderInvoiceList({ client = _client, products = _products
   emptyEl?.classList.add('hidden');
 
   try {
-    if (typeof client.listInvoicesByQuery !== 'function') {
-      throw new Error('Thiếu listInvoicesByQuery');
-    }
-
-    const statusFilter =
-    state.invoiceFilters.status === '' || state.invoiceFilters.status === null
-      ? undefined
-      : Number(state.invoiceFilters.status);
+  if (typeof client.listInvoicesByQuery !== 'function') {
+    throw new Error('Thiếu listInvoicesByQuery');
+  }
   
   const queryCursor = state.invoicePaging.currentCursor || null;
   
@@ -76,7 +71,7 @@ export async function renderInvoiceList({ client = _client, products = _products
     cursor: queryCursor,
   };
   
-  if (state.invoiceFilters.status === 1) {
+  if (state.invoiceFilters.status === 'open') {
     queryParams.statuses = [1, 2];
   } else if (state.invoiceFilters.status !== '' && state.invoiceFilters.status !== null) {
     queryParams.status = Number(state.invoiceFilters.status);
@@ -88,7 +83,7 @@ export async function renderInvoiceList({ client = _client, products = _products
 
     const rows = Array.isArray(res?.rows) ? res.rows : [];
     
-    aggregatePendingItems(rows);
+    renderPendingItemsSummary(rows);
     
     state.invoicePaging.nextCursor = res?.lastDoc || null;
 
@@ -547,7 +542,7 @@ function resetInvoicePaging() {
 
 function attachInvoiceFilterInit() {
   state.invoiceFilters.date = getTodayYYYYMMDD();
-  state.invoiceFilters.status = 1;
+  state.invoiceFilters.status = 'open';
   state.invoiceFilters.limit = Number(document.getElementById('filterLimit')?.value || 10);
   state.invoiceFilters.page = 1;
 

@@ -143,7 +143,7 @@ function renderInvoiceRow({ row, client, products }) {
   const isOpenInvoice = status === 1 || status === 2;
 
   const canEdit = isOpenInvoice;
-  const canIssue = isOpenInvoice;
+  const canIssue = status === 1;
   const canMarkPaid = isOpenInvoice && paymentStatus !== 'paid';
   const canComplete = isOpenInvoice;
   const canCancel = isOpenInvoice;
@@ -174,7 +174,7 @@ function renderInvoiceRow({ row, client, products }) {
   
       <div class="invoice-actions">
         ${canEdit ? `<button class="btn small-edit">Sửa</button>` : ''}
-        ${canIssue ? `<button class="btn small-issue">${status === 2 ? 'Ra đơn lại' : 'Ra đơn'}</button>` : ''}
+        ${canIssue ? `<button class="btn small-issue">Ra đơn</button>` : ''}
         ${canMarkPaid ? `<button class="btn small-pay">Thanh toán</button>` : ''}
         ${canComplete ? `<button class="btn small-complete">Hoàn thành</button>` : ''}
         ${canAddNote ? `<button class="btn small-note">Ghi chú</button>` : ''}
@@ -232,14 +232,7 @@ function renderInvoiceRow({ row, client, products }) {
   // ISSUE
   el.querySelector('.small-issue')?.addEventListener('click', async (e) => {
     e.stopPropagation();
-  
-    const message = status === 2
-      ? 'Xác nhận ra đơn lại?'
-      : 'Xác nhận ra đơn này?';
-  
-    if (confirm(message)) {
-      await issueInvoice({ client, products, id });
-    }
+    await issueInvoice({ client, products, id });
   });
 
   return el;
@@ -656,14 +649,12 @@ async function issueInvoice({ client, products, id }) {
     const invoice = existing.data || {};
     const currentStatus = Number(invoice.status || 1);
 
-    if (currentStatus !== 1 && currentStatus !== 2) {
-      throw new Error('Chỉ đơn đang mở mới có thể ra đơn');
+    if (currentStatus !== 1) {
+      throw new Error('Chỉ đơn mới mới có thể ra đơn');
     }
 
     await client.updateInvoice(id, {
       status: 2,
-      issuedAt: new Date().toISOString(),
-      issuedCount: Number(invoice.issuedCount || 0) + 1,
     });
 
     showToast('Đã cập nhật trạng thái ra đơn', 'success');

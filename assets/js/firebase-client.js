@@ -110,7 +110,7 @@ export async function listInvoicesByQuery({
 }) {
   if (!db) throw new Error('Firestore not initialized. Call initFirebase() first.');
 
-  let constraints = [];
+  const constraints = [];
 
   if (date) {
     const { start, end } = getDayRange(date);
@@ -121,17 +121,17 @@ export async function listInvoicesByQuery({
   }
 
   if (Array.isArray(statuses) && statuses.length > 0) {
-    const normalizedStatuses = statuses
+    const normalized = statuses
       .map(v => Number(v))
       .filter(v => !Number.isNaN(v));
 
-    if (normalizedStatuses.length > 0) {
-      constraints.push(where('status', 'in', normalizedStatuses));
+    if (normalized.length > 0) {
+      constraints.push(where('status', 'in', normalized));
     }
   } else if (status !== 'all' && status !== '' && status !== null && typeof status !== 'undefined') {
-    const numericStatus = Number(status);
-    if (!Number.isNaN(numericStatus)) {
-      constraints.push(where('status', '==', numericStatus));
+    const s = Number(status);
+    if (!Number.isNaN(s)) {
+      constraints.push(where('status', '==', s));
     }
   }
 
@@ -143,11 +143,7 @@ export async function listInvoicesByQuery({
 
   constraints.push(limit(Number(limitNum) || 10));
 
-  const q = query(
-    collection(db, 'invoices'),
-    ...constraints
-  );
-
+  const q = query(collection(db, 'invoices'), ...constraints);
   const snap = await getDocs(q);
 
   return {

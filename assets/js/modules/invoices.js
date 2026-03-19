@@ -71,7 +71,8 @@ export async function renderInvoiceList({ client = _client, products = _products
     cursor: queryCursor,
   };
 
-  if (state.invoiceFilters.status === 'open') {
+  if (state.invoiceFilters.status === 1) {
+    // Filter "Đơn mới" sẽ lấy cả đơn mới + đã ra đơn
     queryParams.statuses = [1, 2];
   } else if (state.invoiceFilters.status !== '' && state.invoiceFilters.status !== null) {
     queryParams.status = Number(state.invoiceFilters.status);
@@ -541,7 +542,7 @@ function resetInvoicePaging() {
 
 function attachInvoiceFilterInit() {
   state.invoiceFilters.date = getTodayYYYYMMDD();
-  state.invoiceFilters.status = 'open';
+  state.invoiceFilters.status = 1;
   state.invoiceFilters.limit = Number(document.getElementById('filterLimit')?.value || 10);
   state.invoiceFilters.page = 1;
 
@@ -549,7 +550,7 @@ function attachInvoiceFilterInit() {
   if (dateEl) dateEl.value = state.invoiceFilters.date || '';
 
   const statusEl = document.getElementById('filterStatus');
-  if (statusEl) statusEl.value = state.invoiceFilters.status === '' ? '' : String(state.invoiceFilters.status);
+  if (statusEl) statusEl.value = String(state.invoiceFilters.status);
 
   const limitEl = document.getElementById('filterLimit');
   if (limitEl) limitEl.value = state.invoiceFilters.limit;
@@ -561,17 +562,11 @@ function attachInvoiceFilterInit() {
 function attachInvoiceFilterHandlers({ client, products }) {
   document.getElementById('filterStatus')?.addEventListener('change', async (e) => {
     const raw = e.target.value;
-
-    if (raw === '' || raw === 'open') {
-      state.invoiceFilters.status = raw;
-    } else {
-      state.invoiceFilters.status = Number(raw);
-    }
-
+    state.invoiceFilters.status = raw === '' ? '' : Number(raw);
     resetInvoicePaging();
     await renderInvoiceList({ client, products });
   });
-
+  
   document.getElementById('filterDate')?.addEventListener('change', async (e) => {
     state.invoiceFilters.date = e.target.value || null;
     resetInvoicePaging();

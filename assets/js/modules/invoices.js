@@ -637,18 +637,11 @@ async function markInvoicePaid({ client, products, id, paymentMethod }) {
       throw new Error('Thiếu updateInvoice');
     }
 
-    const payload = {
+    await client.updateInvoice(id, {
       paymentStatus: 'paid',
       paymentMethod: paymentMethod || 'bank',
       statusVersion: 2,
-    };
-
-    // Nếu đang là đơn mới thì thanh toán sẽ tự ra đơn
-    if (currentStatus === 1) {
-      payload.status = 2;
-    }
-
-    await client.updateInvoice(id, payload);
+    });
 
     showToast(`Đã thanh toán: ${PAYMENT_METHOD_MAP[paymentMethod || 'bank']}`, 'success');
     resetInvoicePaging();

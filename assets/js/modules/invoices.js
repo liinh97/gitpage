@@ -474,7 +474,7 @@ async function saveInvoiceFlow({ client, products }) {
         return;
       }
 
-      alert('Cập nhật hoá đơn thành công.');
+      showToast('Cập nhật hoá đơn thành công', 'success');
     }
     // CREATE
     else {
@@ -503,7 +503,7 @@ async function saveInvoiceFlow({ client, products }) {
       const saved = await client.saveInvoice(payload);
       state.currentInvoiceId = saved?.id || null;
 
-      alert('Lưu hoá đơn thành công.');
+      showToast('Lưu hoá đơn thành công', 'success');
     }
 
     // reset state + refresh list

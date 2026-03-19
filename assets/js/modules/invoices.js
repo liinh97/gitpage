@@ -761,10 +761,10 @@ function renderPendingItemsSummary(rows = []) {
       <div class="issued-summary-title">Các món cần làm tiếp theo</div>
       <div class="issued-summary-list">
         ${aggregated.map(item => `
-          <div class="issued-summary-item">
+          <span class="issued-summary-item">
             <span class="issued-summary-name">${escapeHtml(item.name)}</span>
             <span class="issued-summary-qty">x${item.qty}</span>
-          </div>
+          </span>
         `).join('')}
       </div>
     </div>

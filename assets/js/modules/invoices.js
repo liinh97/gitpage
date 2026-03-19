@@ -201,17 +201,35 @@ function renderInvoiceRow({ row, client, products }) {
   // PAY ONLY
   el.querySelector('.small-pay')?.addEventListener('click', async (e) => {
     e.stopPropagation();
-  
+
     const method = await pickPaymentMethod();
     if (!method) return;
-  
-    await markInvoicePaid({ client, products, id, paymentMethod: method });
+
+    await markInvoicePaid({
+      client,
+      products,
+      id,
+      paymentMethod: method,
+    });
   });
 
   // COMPLETE (bao gồm thanh toán nếu chưa thanh toán)
   el.querySelector('.small-complete')?.addEventListener('click', async (e) => {
     e.stopPropagation();
-    await completeInvoice({ client, products, id });
+
+    let paymentMethod = null;
+
+    if (paymentStatus !== 'paid') {
+      paymentMethod = await pickPaymentMethod();
+      if (!paymentMethod) return;
+    }
+
+    await completeInvoice({
+      client,
+      products,
+      id,
+      paymentMethod,
+    });
   });
 
   // NOTE
@@ -559,7 +577,7 @@ function attachInvoiceFilterHandlers({ client, products }) {
     resetInvoicePaging();
     await renderInvoiceList({ client, products });
   });
-  
+
   document.getElementById('filterDate')?.addEventListener('change', async (e) => {
     state.invoiceFilters.date = e.target.value || null;
     resetInvoicePaging();
@@ -615,16 +633,24 @@ async function markInvoicePaid({ client, products, id, paymentMethod }) {
       throw new Error('Chỉ đơn đang mở mới được thanh toán');
     }
 
-    if (typeof client.updateInvoice === 'function') {
-      await client.updateInvoice(id, {
-        paymentStatus: 'paid',
-        paymentMethod: paymentMethod || 'bank',
-      });
-    } else {
+    if (typeof client.updateInvoice !== 'function') {
       throw new Error('Thiếu updateInvoice');
     }
 
-    showToast(`Đã cập nhật thanh toán: ${PAYMENT_METHOD_MAP[paymentMethod || 'bank']}`, 'success');
+    const payload = {
+      paymentStatus: 'paid',
+      paymentMethod: paymentMethod || 'bank',
+      statusVersion: 2,
+    };
+
+    // Nếu đang là đơn mới thì thanh toán sẽ tự ra đơn
+    if (currentStatus === 1) {
+      payload.status = 2;
+    }
+
+    await client.updateInvoice(id, payload);
+
+    showToast(`Đã thanh toán: ${PAYMENT_METHOD_MAP[paymentMethod || 'bank']}`, 'success');
     resetInvoicePaging();
     await renderInvoiceList({ client, products }).catch(() => {});
   } catch (err) {
@@ -666,7 +692,7 @@ async function issueInvoice({ client, products, id }) {
   }
 }
 
-async function completeInvoice({ client, products, id }) {
+async function completeInvoice({ client, products, id, paymentMethod = null }) {
   try {
     await client.signInAnonymouslyIfNeeded?.();
 
@@ -681,25 +707,31 @@ async function completeInvoice({ client, products, id }) {
 
     const invoice = existing.data || {};
     const currentStatus = Number(invoice.status || 1);
-    const paymentStatus = normalizePaymentStatus(invoice.paymentStatus);
+    const currentPaymentStatus = normalizePaymentStatus(invoice.paymentStatus);
 
     if (currentStatus !== 1 && currentStatus !== 2) {
       throw new Error('Chỉ đơn đang mở mới có thể hoàn thành');
     }
 
-    if (paymentStatus !== 'paid') {
-      throw new Error('Đơn chưa thanh toán, không thể hoàn thành');
+    if (typeof client.updateInvoice !== 'function') {
+      throw new Error('Thiếu updateInvoice');
     }
 
-    if (typeof client.updateInvoice === 'function') {
-      await client.updateInvoice(id, {
-        status: 3,
-      });
-    } else if (typeof client.updateInvoiceStatus === 'function') {
-      await client.updateInvoiceStatus(id, 3);
+    const payload = {
+      status: 3,
+      statusVersion: 2,
+    };
+
+    // Nếu chưa thanh toán thì hoàn thành sẽ tự thanh toán
+    if (currentPaymentStatus !== 'paid') {
+      payload.paymentStatus = 'paid';
+      payload.paymentMethod = paymentMethod || 'bank';
     } else {
-      throw new Error('Thiếu updateInvoice/updateInvoiceStatus');
+      payload.paymentStatus = 'paid';
+      payload.paymentMethod = normalizePaymentMethod(invoice.paymentMethod);
     }
+
+    await client.updateInvoice(id, payload);
 
     showToast('Đã chuyển đơn sang hoàn thành', 'success');
     resetInvoicePaging();

@@ -64,42 +64,41 @@ export async function renderInvoiceList({ client = _client, products = _products
   }
   
   const queryCursor = state.invoicePaging.currentCursor || null;
-  
+
   const queryParams = {
     date: state.invoiceFilters.date,
     limitNum: state.invoiceFilters.limit,
     cursor: queryCursor,
   };
-  
+
   if (state.invoiceFilters.status === 'open') {
     queryParams.statuses = [1, 2];
   } else if (state.invoiceFilters.status !== '' && state.invoiceFilters.status !== null) {
     queryParams.status = Number(state.invoiceFilters.status);
   }
-  
+
   const res = await client.listInvoicesByQuery(queryParams);
+  await renderPendingItemsSummaryByQuery({ client }).catch(() => {});
 
-    listRoot.innerHTML = '';
+  listRoot.innerHTML = '';
 
-    const rows = Array.isArray(res?.rows) ? res.rows : [];
-    
-    renderPendingItemsSummary(rows);
-    
-    state.invoicePaging.nextCursor = res?.lastDoc || null;
+  const rows = Array.isArray(res?.rows) ? res.rows : [];
+  
+  state.invoicePaging.nextCursor = res?.lastDoc || null;
 
-    if (!rows.length) {
-      emptyEl?.classList.remove('hidden');
-      if (prevBtn) prevBtn.disabled = state.invoicePaging.cursorStack.length === 0;
-      if (nextBtn) nextBtn.disabled = true;
-      return;
-    }
-
-    rows.forEach(row => {
-      listRoot.appendChild(renderInvoiceRow({ row, client, products }));
-    });
-
+  if (!rows.length) {
+    emptyEl?.classList.remove('hidden');
     if (prevBtn) prevBtn.disabled = state.invoicePaging.cursorStack.length === 0;
-    if (nextBtn) nextBtn.disabled = !state.invoicePaging.nextCursor;
+    if (nextBtn) nextBtn.disabled = true;
+    return;
+  }
+
+  rows.forEach(row => {
+    listRoot.appendChild(renderInvoiceRow({ row, client, products }));
+  });
+
+  if (prevBtn) prevBtn.disabled = state.invoicePaging.cursorStack.length === 0;
+  if (nextBtn) nextBtn.disabled = !state.invoicePaging.nextCursor;
 
   } catch (err) {
     console.error(err);
@@ -550,7 +549,7 @@ function attachInvoiceFilterInit() {
   if (dateEl) dateEl.value = state.invoiceFilters.date || '';
 
   const statusEl = document.getElementById('filterStatus');
-  if (statusEl) statusEl.value = String(state.invoiceFilters.status);
+  if (statusEl) statusEl.value = state.invoiceFilters.status === '' ? '' : String(state.invoiceFilters.status);
 
   const limitEl = document.getElementById('filterLimit');
   if (limitEl) limitEl.value = state.invoiceFilters.limit;
@@ -562,7 +561,13 @@ function attachInvoiceFilterInit() {
 function attachInvoiceFilterHandlers({ client, products }) {
   document.getElementById('filterStatus')?.addEventListener('change', async (e) => {
     const raw = e.target.value;
-    state.invoiceFilters.status = raw === '' ? '' : Number(raw);
+
+    if (raw === '' || raw === 'open') {
+      state.invoiceFilters.status = raw;
+    } else {
+      state.invoiceFilters.status = Number(raw);
+    }
+
     resetInvoicePaging();
     await renderInvoiceList({ client, products });
   });
@@ -778,4 +783,29 @@ function renderPendingItemsSummary(rows = []) {
       </div>
     </div>
   `;
+}
+
+async function renderPendingItemsSummaryByQuery({ client }) {
+  const root = document.getElementById('pendingItemsSummary');
+  if (!root) return;
+
+  try {
+    const res = await client.listInvoicesByQuery({
+      date: state.invoiceFilters.date,
+      status: 1,
+      limitNum: 200,
+      cursor: null,
+    });
+
+    const rows = Array.isArray(res?.rows) ? res.rows : [];
+    renderPendingItemsSummary(rows);
+  } catch (err) {
+    console.error(err);
+    root.innerHTML = `
+      <div class="issued-summary-card">
+        <div class="issued-summary-title">Các món cần làm tiếp theo</div>
+        <div class="error">Không tải được danh sách món cần làm</div>
+      </div>
+    `;
+  }
 }

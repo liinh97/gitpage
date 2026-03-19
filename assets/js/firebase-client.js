@@ -52,14 +52,16 @@ export function ensureInit(firebaseConfig) {
 export async function signInAnonymouslyIfNeeded() {
   if (!auth) throw new Error('Firebase not initialized. Call initFirebase() first.');
   if (auth.currentUser) return auth.currentUser;
-  return new Promise((resolve, reject) => {
-    signInAnonymously(auth)
-      .then(() => {
-        onAuthStateChanged(auth, user => {
-          if (user) resolve(user);
-        });
-      })
-      .catch(reject);
+
+  await signInAnonymously(auth);
+
+  return new Promise((resolve) => {
+    const unsub = onAuthStateChanged(auth, user => {
+      if (user) {
+        unsub();
+        resolve(user);
+      }
+    });
   });
 }
 
@@ -101,10 +103,13 @@ export function getDayRange(dateStr) {
 ========================= */
 export async function listInvoicesByQuery({
   status = 'all',
+  statuses = null,
   date = null,
   limitNum = 10,
   cursor = null,
 }) {
+  if (!db) throw new Error('Firestore not initialized. Call initFirebase() first.');
+
   let constraints = [];
 
   if (date) {
@@ -115,8 +120,19 @@ export async function listInvoicesByQuery({
     );
   }
 
-  if (status !== 'all') {
-    constraints.push(where('status', '==', Number(status)));
+  if (Array.isArray(statuses) && statuses.length > 0) {
+    const normalizedStatuses = statuses
+      .map(v => Number(v))
+      .filter(v => !Number.isNaN(v));
+
+    if (normalizedStatuses.length > 0) {
+      constraints.push(where('status', 'in', normalizedStatuses));
+    }
+  } else if (status !== 'all' && status !== '' && status !== null && typeof status !== 'undefined') {
+    const numericStatus = Number(status);
+    if (!Number.isNaN(numericStatus)) {
+      constraints.push(where('status', '==', numericStatus));
+    }
   }
 
   constraints.push(orderBy('createdAtServer', 'desc'));
@@ -125,7 +141,7 @@ export async function listInvoicesByQuery({
     constraints.push(startAfter(cursor));
   }
 
-  constraints.push(limit(limitNum));
+  constraints.push(limit(Number(limitNum) || 10));
 
   const q = query(
     collection(db, 'invoices'),
@@ -187,13 +203,13 @@ export async function updateInvoice(id, data) {
 
 /**
  * updateInvoiceStatus(id, status)
- * status should be numeric 1|2|3
+ * status should be numeric 1|2|3|4
  */
 export async function updateInvoiceStatus(id, status) {
   if (!db) throw new Error('Firestore not initialized. Call initFirebase() first.');
   if (!id) throw new Error('id required');
   const s = Number(status);
-  if (![1,2,3].includes(s)) throw new Error('Invalid status');
+  if (![1,2,3,4].includes(s)) throw new Error('Invalid status');
   const dref = doc(db, 'invoices', id);
   await updateDoc(dref, { status: s, updatedAtServer: serverTimestamp() });
   return { id, status: s };
@@ -209,6 +225,7 @@ Object.assign(window.FBClient, {
   signInAnonymouslyIfNeeded,
   saveInvoice,
   listInvoices,
+  listInvoicesByQuery,
   getInvoice,
   updateInvoice,
   updateInvoiceStatus

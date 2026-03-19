@@ -769,7 +769,22 @@ function aggregatePendingItems(rows = []) {
     });
   });
 
-  return Object.values(itemMap).sort((a, b) => b.qty - a.qty);
+  const menuOrder = [...document.querySelectorAll('.product-item')]
+    .map((el, index) => ({
+      name: (el.dataset.name || '').trim(),
+      index,
+    }))
+    .filter(x => x.name);
+
+  const orderMap = new Map(menuOrder.map(x => [x.name, x.index]));
+
+  return Object.values(itemMap).sort((a, b) => {
+    const aIndex = orderMap.has(a.name) ? orderMap.get(a.name) : Number.MAX_SAFE_INTEGER;
+    const bIndex = orderMap.has(b.name) ? orderMap.get(b.name) : Number.MAX_SAFE_INTEGER;
+
+    if (aIndex !== bIndex) return aIndex - bIndex;
+    return a.name.localeCompare(b.name, 'vi');
+  });
 }
 
 function renderPendingItemsSummary(rows = []) {

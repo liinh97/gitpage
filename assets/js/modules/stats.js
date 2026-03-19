@@ -169,7 +169,7 @@ async function runStats() {
   const allInvoices = await loadAllInvoicesInRange({ fromDate, toDate });
 
   const paidInvoices = allInvoices.filter(inv => normalizePaymentStatus(inv?.paymentStatus, inv) === 'paid');
-  const canceledInvoices = allInvoices.filter(inv => Number(inv?.status) === 3);
+  const canceledInvoices = allInvoices.filter(inv => Number(inv?.status) === 4);
   
   const result = computeStats({
     invoices: paidInvoices,
@@ -577,7 +577,7 @@ function normalizePaymentStatus(value, invoice = null) {
   // fallback cho dữ liệu cũ:
   // trước đây status=2 là đơn hoàn thành / đã xử lý xong,
   // chưa có field paymentStatus thì coi như đã thanh toán
-  if (!value && Number(invoice?.status) === 2) {
+  if (!value && Number(invoice?.status) === 3) {
     return 'paid';
   }
 

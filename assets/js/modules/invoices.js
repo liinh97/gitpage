@@ -24,6 +24,8 @@ let _products = null;
 let _setUIMode = null;
 let _invoicesInitialized = false;
 
+const INVOICE_RELOAD_SCROLL_KEY = 'invoice_reload_scroll_top';
+
 export function initInvoices({ client, products, setUIMode }) {
   if (!client?.listInvoicesByQuery) {
     console.warn('initInvoices: client.listInvoicesByQuery missing');
@@ -32,6 +34,8 @@ export function initInvoices({ client, products, setUIMode }) {
   _client = client;
   _products = products;
   _setUIMode = typeof setUIMode === 'function' ? setUIMode : null;
+
+  restoreScrollTopAfterReload();
 
   if (_invoicesInitialized) return;
   _invoicesInitialized = true;
@@ -475,6 +479,10 @@ async function saveInvoiceFlow({ client, products }) {
       }
 
       showToast('Cập nhật hoá đơn thành công', 'success');
+      setTimeout(() => {
+        reloadPageAndScrollTop();
+      }, 300);
+      return;
     }
     // CREATE
     else {
@@ -504,11 +512,14 @@ async function saveInvoiceFlow({ client, products }) {
       state.currentInvoiceId = saved?.id || null;
 
       showToast('Lưu hoá đơn thành công', 'success');
+      setTimeout(() => {
+        reloadPageAndScrollTop();
+      }, 300);
+      return;
     }
 
     // reset state + refresh list
     state.currentInvoiceId = null;
-    await renderInvoiceList({ client, products, resetPaging: true }).catch(() => {});
 
   } catch (err) {
     console.error('saveInvoiceFlow error', err);
@@ -834,4 +845,28 @@ async function renderPendingItemsSummaryByQuery({ client }) {
       </div>
     `;
   }
+}
+
+function reloadPageAndScrollTop() {
+  try {
+    if ('scrollRestoration' in history) {
+      history.scrollRestoration = 'manual';
+    }
+    sessionStorage.setItem(INVOICE_RELOAD_SCROLL_KEY, '1');
+  } catch {}
+
+  window.location.reload();
+}
+
+function restoreScrollTopAfterReload() {
+  try {
+    const shouldScrollTop = sessionStorage.getItem(INVOICE_RELOAD_SCROLL_KEY) === '1';
+    if (!shouldScrollTop) return;
+
+    sessionStorage.removeItem(INVOICE_RELOAD_SCROLL_KEY);
+
+    requestAnimationFrame(() => {
+      window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
+    });
+  } catch {}
 }

@@ -285,6 +285,11 @@ function computeStats({
   extraEveryN,
   extraAvgCost,
 }) {
+  const normalizeName = (s) => String(s || '').trim().toLowerCase();
+
+  const safeInvoices = Array.isArray(invoices) ? invoices : [];
+  const safeCostMap = costMap instanceof Map ? costMap : new Map();
+
   let invoiceCount = 0;
 
   let totalRevenueAllItems = 0;
@@ -299,19 +304,21 @@ function computeStats({
   let totalPaidCash = 0;
   let totalPaidBank = 0;
 
-  const expectedExtraPerInvoice = extraEveryN > 0 ? (extraAvgCost / extraEveryN) : 0;
+  const expectedExtraPerInvoice =
+    Number(extraEveryN) > 0 ? ((Number(extraAvgCost) || 0) / Number(extraEveryN)) : 0;
+
   const perItem = new Map();
 
-  for (const inv of invoices) {
+  for (const inv of safeInvoices) {
     const paymentStatus = normalizePaymentStatus(inv?.paymentStatus, inv);
     if (paymentStatus !== 'paid') continue;
 
     invoiceCount++;
 
-    const items = Array.isArray(inv.items) ? inv.items : [];
-    const ship = Math.max(0, Number(inv.ship) || 0);
-    const discount = Math.max(0, Number(inv.discount) || 0);
-    const total = Math.max(0, Number(inv.total) || 0) - Math.max(0, Number(inv.ship) || 0);
+    const invoiceItems = Array.isArray(inv?.items) ? inv.items : [];
+    const ship = Math.max(0, Number(inv?.ship) || 0);
+    const discount = Math.max(0, Number(inv?.discount) || 0);
+    const total = Math.max(0, Number(inv?.total) || 0) - ship;
 
     totalShip += ship;
     totalDiscount += discount;
@@ -321,28 +328,36 @@ function computeStats({
     else totalPaidBank += total;
 
     let gross = 0;
-    for (const it of items) {
-      const qty = Number(it.qty) || 0;
-      const sub = Math.max(0, Number(it.subtotal) || 0);
+    for (const it of invoiceItems) {
+      const qty = Number(it?.qty) || 0;
+      const sub = Math.max(0, Number(it?.subtotal) || 0);
       if (qty <= 0 || sub <= 0) continue;
       gross += sub;
     }
 
     let netBase = 0;
-    const normalized = [];
+    const normalizedItems = [];
 
-    for (const it of items) {
-      const name = String(it?.name || '(Không tên)');
-      const qty = Number(it.qty) || 0;
-      const sub = Math.max(0, Number(it.subtotal) || 0);
-      if (!name || qty <= 0 || sub <= 0) continue;
+    for (const it of invoiceItems) {
+      const rawName = String(it?.name || '(Không tên)').trim();
+      const keyName = normalizeName(rawName);
+      const qty = Number(it?.qty) || 0;
+      const sub = Math.max(0, Number(it?.subtotal) || 0);
+
+      if (!rawName || qty <= 0 || sub <= 0) continue;
 
       const discountShare = gross > 0 ? (discount * (sub / gross)) : 0;
       const netSub = Math.max(0, sub - discountShare);
 
-      normalized.push({ name, qty, sub, netSub });
-      netBase += netSub;
+      normalizedItems.push({
+        rawName,
+        keyName,
+        qty,
+        sub,
+        netSub,
+      });
 
+      netBase += netSub;
       totalRevenueAllItems += netSub;
     }
 
@@ -350,20 +365,34 @@ function computeStats({
     const overheadToAllocate = netBase > 0 ? orderOverhead : 0;
     totalOverhead += overheadToAllocate;
 
-    for (const x of normalized) {
-      const { name, qty, netSub } = x;
+    for (const x of normalizedItems) {
+      const { rawName, keyName, qty, netSub } = x;
 
-      const unitCost = Number(costMap.get(name));
-      const safeUnitCost = Number.isFinite(unitCost) && unitCost > 0 ? unitCost : 0;
+      const unitCost = Number(safeCostMap.get(rawName));
+      const altUnitCost = Number(safeCostMap.get(keyName));
+      const pickedCost = Number.isFinite(unitCost)
+        ? unitCost
+        : Number.isFinite(altUnitCost)
+          ? altUnitCost
+          : 0;
+
+      const safeUnitCost = Number.isFinite(pickedCost) && pickedCost > 0 ? pickedCost : 0;
 
       const cost = safeUnitCost * qty;
       const overheadShare = netBase > 0 ? (overheadToAllocate * (netSub / netBase)) : 0;
       const profit = netSub - cost - overheadShare;
 
-      let row = perItem.get(name);
+      let row = perItem.get(keyName);
       if (!row) {
-        row = { name, qty: 0, revenue: 0, cost: 0, overhead: 0, profit: 0 };
-        perItem.set(name, row);
+        row = {
+          name: rawName,
+          qty: 0,
+          revenue: 0,
+          cost: 0,
+          overhead: 0,
+          profit: 0,
+        };
+        perItem.set(keyName, row);
       }
 
       row.qty += qty;
@@ -378,50 +407,74 @@ function computeStats({
     }
   }
 
-const margin = totalRevenueIncluded > 0 ? (totalProfitIncluded / totalRevenueIncluded) : 0;
+  const margin =
+    totalRevenueIncluded > 0 ? (totalProfitIncluded / totalRevenueIncluded) : 0;
 
-const productsList = Array.isArray(state?.PRODUCTS)
-  ? state.PRODUCTS
-  : Array.isArray(_products?.state?.PRODUCTS)
-    ? _products.state.PRODUCTS
-    : [];
+  const productsList = Array.isArray(state?.PRODUCTS)
+    ? state.PRODUCTS
+    : Array.isArray(_products?.state?.PRODUCTS)
+      ? _products.state.PRODUCTS
+      : [];
 
-const productOrderMap = new Map(
-  productsList
-    .filter(p => p && typeof p === 'object' && p.name)
-    .map((p, idx) => [p.name, idx])
-);
+  const productOrderMap = new Map();
+  let orderIndex = 0;
 
-const items = [...perItem.values()].sort((a, b) => {
-  const aIdx = productOrderMap.has(a.name) ? productOrderMap.get(a.name) : Number.MAX_SAFE_INTEGER;
-  const bIdx = productOrderMap.has(b.name) ? productOrderMap.get(b.name) : Number.MAX_SAFE_INTEGER;
-  return aIdx - bIdx;
-});
+  for (const p of productsList) {
+    if (!p || typeof p !== 'object' || !p.name) continue;
+    const key = normalizeName(p.name);
+    if (!key || productOrderMap.has(key)) continue;
+    productOrderMap.set(key, orderIndex++);
+  }
 
-return {
-  invoiceCount,
-  canceledCount,
+  const items = [...perItem.entries()]
+    .sort((a, b) => {
+      const aKey = a[0];
+      const bKey = b[0];
 
-  totalRevenueAllItems,
-  totalRevenueIncluded,
-  totalItemsCostIncluded,
-  totalOverhead,
-  totalProfitIncluded,
-  margin,
+      const aIdx = productOrderMap.has(aKey)
+        ? productOrderMap.get(aKey)
+        : Number.MAX_SAFE_INTEGER;
 
-  totalShip,
-  totalDiscount,
-  expectedExtraPerInvoice,
+      const bIdx = productOrderMap.has(bKey)
+        ? productOrderMap.get(bKey)
+        : Number.MAX_SAFE_INTEGER;
 
-  totalPaidCash,
-  totalPaidBank,
-  totalPaidAll: totalPaidCash + totalPaidBank,
+      if (aIdx !== bIdx) return aIdx - bIdx;
 
-  items,
-  missingCostItems: Array.isArray(missingCostItems)
-    ? missingCostItems
-    : [...(missingCostItems || [])],
-};
+      return a[1].name.localeCompare(b[1].name, 'vi');
+    })
+    .map(([, value]) => value);
+
+  const safeMissingCostItems =
+    missingCostItems instanceof Set
+      ? [...missingCostItems]
+      : Array.isArray(missingCostItems)
+        ? missingCostItems
+        : [];
+
+  return {
+    invoiceCount,
+    canceledCount,
+
+    totalRevenueAllItems,
+    totalRevenueIncluded,
+    totalItemsCostIncluded,
+    totalOverhead,
+    totalProfitIncluded,
+    margin,
+
+    totalShip,
+    totalDiscount,
+    expectedExtraPerInvoice,
+
+    totalPaidCash,
+    totalPaidBank,
+    totalPaidAll: totalPaidCash + totalPaidBank,
+
+    items,
+    missingCostItems: safeMissingCostItems,
+  };
+}
 
 function renderStats(res) {
   const summaryEl = document.getElementById('statsSummary');

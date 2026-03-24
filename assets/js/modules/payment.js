@@ -54,29 +54,52 @@ export async function showQRCodeForAmount(amount) {
       template: "compact"
     };
 
-    const res = await fetch(VIETQR_ENDPOINT, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-client-id': VIETQR_CLIENT_ID,
-        'x-api-key': VIETQR_API_KEY
-      },
-      body: JSON.stringify(body)
-    });
+    // Ưu tiên ảnh QR cố định
+    let qrImageLink = 'https://drive.google.com/file/d/1EBJaALC9kxKK2LRpdlPSslVujzdueTqa/view?usp=sharing';
 
-    if (!res.ok) {
-      const txt = await res.text().catch(() => res.statusText || 'Error');
-      throw new Error(`API lỗi: ${res.status} ${txt}`);
+    let qrDataURL = null;
+    let qrCodeText = null;
+
+    if (qrImageLink) {
+      qrDataURL = qrImageLink;
+      qrCodeText = 'chuyển tiền bằng qr';
+    } else {
+      const res = await fetch(VIETQR_ENDPOINT, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-client-id': VIETQR_CLIENT_ID,
+          'x-api-key': VIETQR_API_KEY
+        },
+        body: JSON.stringify(body)
+      });
+
+      if (!res.ok) {
+        const txt = await res.text().catch(() => res.statusText || 'Error');
+        throw new Error(`API lỗi: ${res.status} ${txt}`);
+      }
+
+      const json = await res.json();
+      qrDataURL = json?.data?.qrDataURL ?? null;
+      qrCodeText = json?.data?.qrCode ?? null;
     }
 
-    const json = await res.json();
-    const qrDataURL = json?.data?.qrDataURL;
-    const qrCodeText = json?.data?.qrCode;
-
     if (qrDataURL && qrC) {
-      qrC.innerHTML = `<img src="${qrDataURL}" alt="QR code" style="max-width:100%; max-height:100%; border-radius:6px; object-fit:contain" />`;
+      qrC.innerHTML = `
+        <img
+          src="${qrDataURL}"
+          alt="QR code"
+          style="max-width:100%; max-height:100%; border-radius:6px; object-fit:contain"
+        />
+      `;
     } else if (qrCodeText && qrC) {
-      qrC.innerHTML = `<img src="https://chart.googleapis.com/chart?cht=qr&chs=500x500&chl=${encodeURIComponent(qrCodeText)}" alt="QR code" style="max-width:100%; max-height:100%; border-radius:6px; object-fit:contain" />`;
+      qrC.innerHTML = `
+        <img
+          src="https://chart.googleapis.com/chart?cht=qr&chs=500x500&chl=${encodeURIComponent(qrCodeText)}"
+          alt="QR code"
+          style="max-width:100%; max-height:100%; border-radius:6px; object-fit:contain"
+        />
+      `;
     } else {
       throw new Error('Không nhận được dữ liệu QR từ server.');
     }

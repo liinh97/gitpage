@@ -55,7 +55,7 @@ export async function showQRCodeForAmount(amount) {
     };
 
     // Ưu tiên ảnh QR cố định
-    let qrImageLink = 'https://www.bigfootdigital.co.uk/wp-content/uploads/2020/07/image-optimisation-scaled.jpg';
+    let qrImageLink = 'https://lh3.googleusercontent.com/pw/AP1GczPYASfhGeyh_8D6A7leU9mdvDwIllx7rhZ2SoVz1p3pCj2AkyJ6Oy0kUH-1OU9VXb_PzfM4lsl1LLXL4N2USnbLuUqpY0PVSZ8k20d6RY5z-MVvHUe0luhGxQ60boFXv-2CVnqsF4PU64Xj4rcD0EKHQw=w651-h869-s-no-gm?authuser=0';
 
     let qrDataURL = null;
     let qrCodeText = null;

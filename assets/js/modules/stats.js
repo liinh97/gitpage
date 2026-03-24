@@ -302,10 +302,6 @@ function computeStats({
   const expectedExtraPerInvoice = extraEveryN > 0 ? (extraAvgCost / extraEveryN) : 0;
   const perItem = new Map();
 
-  // thêm đoạn này
-  const productsList = state?.PRODUCTS || _products?.state?.PRODUCTS || [];
-  const productOrderMap = new Map(productsList.map((p, idx) => [p?.name, idx]));
-
   for (const inv of invoices) {
     const paymentStatus = normalizePaymentStatus(inv?.paymentStatus, inv);
     if (paymentStatus !== 'paid') continue;
@@ -382,7 +378,7 @@ function computeStats({
     }
   }
 
-  const margin = totalRevenueIncluded > 0 ? (totalProfitIncluded / totalRevenueIncluded) : 0;
+const margin = totalRevenueIncluded > 0 ? (totalProfitIncluded / totalRevenueIncluded) : 0;
 
 const productsList = Array.isArray(state?.PRODUCTS)
   ? state.PRODUCTS

@@ -55,7 +55,7 @@ export async function showQRCodeForAmount(amount) {
     };
 
     // Ưu tiên ảnh QR cố định
-    let qrImageLink = 'https://photos.fife.usercontent.google.com/pw/AP1GczPX1IMw2vj5t4rY1rL00UYMYe2eirY-8QLzfq5GGQtAK2lNewGS7BryeQ=w651-h869-s-no-gm?authuser=0';
+    let qrImageLink = 'https://www.bigfootdigital.co.uk/wp-content/uploads/2020/07/image-optimisation-scaled.jpg';
 
     let qrDataURL = null;
     let qrCodeText = null;

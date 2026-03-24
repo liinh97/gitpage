@@ -302,6 +302,10 @@ function computeStats({
   const expectedExtraPerInvoice = extraEveryN > 0 ? (extraAvgCost / extraEveryN) : 0;
   const perItem = new Map();
 
+  // thêm đoạn này
+  const productsList = state?.PRODUCTS || _products?.state?.PRODUCTS || [];
+  const productOrderMap = new Map(productsList.map((p, idx) => [p?.name, idx]));
+
   for (const inv of invoices) {
     const paymentStatus = normalizePaymentStatus(inv?.paymentStatus, inv);
     if (paymentStatus !== 'paid') continue;
@@ -379,7 +383,13 @@ function computeStats({
   }
 
   const margin = totalRevenueIncluded > 0 ? (totalProfitIncluded / totalRevenueIncluded) : 0;
-  const items = [...perItem.values()].sort((a, b) => (b.profit - a.profit));
+
+  // thay đoạn sort cũ bằng sort theo thứ tự sản phẩm
+  const items = [...perItem.values()].sort((a, b) => {
+    const aIdx = productOrderMap.has(a.name) ? productOrderMap.get(a.name) : Number.MAX_SAFE_INTEGER;
+    const bIdx = productOrderMap.has(b.name) ? productOrderMap.get(b.name) : Number.MAX_SAFE_INTEGER;
+    return aIdx - bIdx;
+  });
 
   return {
     invoiceCount,

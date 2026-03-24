@@ -384,36 +384,48 @@ function computeStats({
 
   const margin = totalRevenueIncluded > 0 ? (totalProfitIncluded / totalRevenueIncluded) : 0;
 
-  // thay đoạn sort cũ bằng sort theo thứ tự sản phẩm
-  const items = [...perItem.values()].sort((a, b) => {
-    const aIdx = productOrderMap.has(a.name) ? productOrderMap.get(a.name) : Number.MAX_SAFE_INTEGER;
-    const bIdx = productOrderMap.has(b.name) ? productOrderMap.get(b.name) : Number.MAX_SAFE_INTEGER;
-    return aIdx - bIdx;
-  });
+const productsList = Array.isArray(state?.PRODUCTS)
+  ? state.PRODUCTS
+  : Array.isArray(_products?.state?.PRODUCTS)
+    ? _products.state.PRODUCTS
+    : [];
 
-  return {
-    invoiceCount,
-    canceledCount,
+const productOrderMap = new Map(
+  productsList
+    .filter(p => p && typeof p === 'object' && p.name)
+    .map((p, idx) => [p.name, idx])
+);
 
-    totalRevenueAllItems,
-    totalRevenueIncluded,
-    totalItemsCostIncluded,
-    totalOverhead,
-    totalProfitIncluded,
-    margin,
+const items = [...perItem.values()].sort((a, b) => {
+  const aIdx = productOrderMap.has(a.name) ? productOrderMap.get(a.name) : Number.MAX_SAFE_INTEGER;
+  const bIdx = productOrderMap.has(b.name) ? productOrderMap.get(b.name) : Number.MAX_SAFE_INTEGER;
+  return aIdx - bIdx;
+});
 
-    totalShip,
-    totalDiscount,
-    expectedExtraPerInvoice,
+return {
+  invoiceCount,
+  canceledCount,
 
-    totalPaidCash,
-    totalPaidBank,
-    totalPaidAll: totalPaidCash + totalPaidBank,
+  totalRevenueAllItems,
+  totalRevenueIncluded,
+  totalItemsCostIncluded,
+  totalOverhead,
+  totalProfitIncluded,
+  margin,
 
-    items,
-    missingCostItems: Array.isArray(missingCostItems) ? missingCostItems : [...(missingCostItems || [])],
-  };
-}
+  totalShip,
+  totalDiscount,
+  expectedExtraPerInvoice,
+
+  totalPaidCash,
+  totalPaidBank,
+  totalPaidAll: totalPaidCash + totalPaidBank,
+
+  items,
+  missingCostItems: Array.isArray(missingCostItems)
+    ? missingCostItems
+    : [...(missingCostItems || [])],
+};
 
 function renderStats(res) {
   const summaryEl = document.getElementById('statsSummary');

@@ -31,10 +31,8 @@ const ITEM_COST_OVERRIDES = {
   "Bánh xèo nhật chay": 10000,
   "Gà chiên mắm": 17750,
   "Lạp xưởng": 7500,
-  "Bánh gối": 0,
   "Nem tảng 0.5kg": 120000,
   "Nem tảng 1kg": 240000,
-  "Trà đá": 0,
   "Trà quất": 2500,
   "Trà chanh": 2810,
   "Nước lọc": 3250,
@@ -44,11 +42,9 @@ const ITEM_COST_OVERRIDES = {
   "Bún thang chay": 0,
   "Xôi nấm": 0,
   "Ruốc nấm": 0,
-  "Xôi cốm": 0,
-  "Giò chay": 0,
   "Cốm xào": 0,
   "Hoa quả theo mùa": 0,
-  "Nộm đu đủ giã lạc": 0,
+  "Nước chấm nem": 0,
 };
 
 export function initStats({ client, products }) {

@@ -65,7 +65,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     ["Giò chay",120000],
     ["Cốm xào",20000],
     ["Hoa quả theo mùa",20000],
-    ["Nộm đu đủ giã lạc",20000],
+    ["Nước chấm nem",2000],
   ];
   const FAV_INIT = [
     "Nem TCC xù", "Nem TCC vỏ giòn", "Nem TCC phomai",

@@ -71,7 +71,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     "Nem TCC xù", "Nem TCC vỏ giòn", "Nem TCC phomai",
     "Bánh rán mặn", "Bánh rán phomai",
     "Chân gà rút xương", "Khoai tây chiên",
-    "Trà quất", "Trà chanh", "Nước lọc", "Coca", "Sprite"
+    "Trà quất", "Trà chanh", "Nước lọc", "Coca", "Sprite",
+    "Nước chấm nem"
   ];
 
   // init modules

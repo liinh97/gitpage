@@ -47,6 +47,11 @@ const ITEM_COST_OVERRIDES = {
   "Nước chấm nem": 0,
 };
 
+const ITEM_UNIT_MULTIPLIER = {
+  "Nem TCC phomai": 1.5,
+  "Sống Nem TCC phomai": 1.5,
+};
+
 export function initStats({ client, products }) {
   _client = client;
   _products = products;
@@ -391,7 +396,8 @@ function computeStats({
         perItem.set(keyName, row);
       }
 
-      row.qty += qty;
+      const realQty = qty * getMultiplier(rawName, keyName);
+      row.qty += realQty;
       row.revenue += netSub;
       row.cost += cost;
       row.overhead += overheadShare;
@@ -653,4 +659,12 @@ function normalizePaymentStatus(value, invoice = null) {
 
 function normalizePaymentMethod(value) {
   return value === 'cash' ? 'cash' : 'bank';
+}
+
+function getMultiplier(name, keyName) {
+  return (
+    Number(ITEM_UNIT_MULTIPLIER[name]) ||
+    Number(ITEM_UNIT_MULTIPLIER[keyName]) ||
+    1
+  );
 }

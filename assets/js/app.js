@@ -48,13 +48,13 @@ document.addEventListener('DOMContentLoaded', async () => {
     // ["Bánh xèo nhật chay",30000],
     // ["Gà chiên mắm",35000],
     ["Lạp xưởng",15000],
-    ["Nem tảng 0.5kg",145000],
-    ["Nem tảng 1kg",280000],
+    // ["Nem tảng 0.5kg",145000],
+    // ["Nem tảng 1kg",280000],
     ["Trà quất",10000],
     ["Trà chanh",10000],
     ["Nước lọc",10000],
     ["Coca",15000],
-    // ["Sprite",15000],
+    ["Sprite",15000],
     // ["Thịt chưng mắm tép",70000],
     // ["Bún thang chay",45000],
     // ["Xôi nấm",45000],
@@ -65,7 +65,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   ];
   const FAV_INIT = [
     "Nem TCC xù", "Nem TCC vỏ giòn", "Nem TCC phomai",
-    "Bánh rán mặn", "Bánh rán phomai",
+    "Bánh rán mặn", "Bánh rán phomai", "Lạp xưởng",
     "Chân gà rút xương", "Khoai tây chiên",
     "Trà quất", "Trà chanh", "Nước lọc", "Coca", "Sprite",
     "Nước chấm nem"

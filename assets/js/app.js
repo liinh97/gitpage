@@ -40,39 +40,35 @@ document.addEventListener('DOMContentLoaded', async () => {
     ["Sống Nem TCC xù",4200],
     ["Sống Nem TCC vỏ giòn",5200],
     ["Sống Nem TCC phomai",11000],
-    // ["Bánh rán mặn",9000],
-    // ["Bánh rán phomai",10000],
+    ["Bánh rán mặn",9000],
+    ["Bánh rán phomai",10000],
     // ["Bánh rán cốm dừa",10000],
     ["Khoai tây chiên",35000],
-    // ["Chân gà rút xương",80000],
+    ["Chân gà rút xương",80000],
     // ["Bánh xèo nhật chay",30000],
     // ["Gà chiên mắm",35000],
-    // ["Lạp xưởng",15000],
+    ["Lạp xưởng",15000],
     // ["Nem tảng 0.5kg",145000],
     // ["Nem tảng 1kg",280000],
-    // ["Trà quất",10000],
-    // ["Trà chanh",10000],
-    // ["Nước lọc",10000],
-    // ["Coca",15000],
-    // ["Sprite",15000],
+    ["Trà quất",10000],
+    ["Trà chanh",10000],
+    ["Nước lọc",10000],
+    ["Coca",15000],
+    ["Sprite",15000],
     // ["Thịt chưng mắm tép",70000],
     // ["Bún thang chay",45000],
     // ["Xôi nấm",45000],
     // ["Ruốc nấm",70000],
     // ["Cốm xào",20000],
-    // ["Hoa quả theo mùa",20000],
-    // ["Nước chấm nem",2000],
+    ["Hoa quả theo mùa",20000],
+    ["Nước chấm nem",2000],
   ];
-  // const FAV_INIT = [
-  //   "Nem TCC xù", "Nem TCC vỏ giòn", "Nem TCC phomai",
-  //   "Bánh rán mặn", "Bánh rán phomai", "Lạp xưởng",
-  //   "Chân gà rút xương", "Khoai tây chiên",
-  //   "Trà quất", "Trà chanh", "Nước lọc", "Coca", "Sprite",
-  //   "Nước chấm nem"
-  // ];
+  
   const FAV_INIT = [
-    "Nem TCC", "Nem TCC xù", "Nem TCC vỏ giòn", "Nem TCC phomai",
-    "Sống Nem TCC", "Sống Nem TCC xù", "Sống Nem TCC vỏ giòn", "Sống Nem TCC phomai",
+    "Nem TCC xù", "Nem TCC vỏ giòn", "Nem TCC phomai",
+    "Bánh rán mặn", "Bánh rán phomai", "Lạp xưởng",
+    "Chân gà rút xương", "Khoai tây chiên",
+    "Trà quất", "Trà chanh", "Nước chấm nem"
   ];
 
   // init modules
